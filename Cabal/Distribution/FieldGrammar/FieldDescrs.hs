@@ -1,5 +1,10 @@
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ScopedTypeVariables #-}
+#endif
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE RankNTypes    #-}
+{-# LANGUAGE InstanceSigs    #-}
 module Distribution.FieldGrammar.FieldDescrs (
     FieldDescrs,
     fieldDescrPretty,
@@ -21,22 +26,39 @@ import qualified Distribution.Compat.CharParsing as C
 import qualified Distribution.Fields.Field       as P
 import qualified Distribution.Parsec             as P
 import qualified Text.PrettyPrint                as Disp
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@), Total)
+#endif
 
 -- strict pair
 data SP s = SP
     { pPretty :: !(s -> Disp.Doc)
-    , pParse  :: !(forall m. P.CabalParsing m => s -> m s)
+    , pParse  :: !(forall m. (P.CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                             , Total m
+#endif
+                             ) => s -> m s)
     }
+-- #if MIN_VERSION_base(4,14,0)
+-- instance Total SP
+-- #endif
 
 -- | A collection field parsers and pretty-printers.
-newtype FieldDescrs s a = F { runF :: Map P.FieldName (SP s) }
+data FieldDescrs s a = F { runF :: Map P.FieldName (SP s) }
   deriving (Functor)
+#if MIN_VERSION_base(4,14,0)
+instance Total (FieldDescrs s)
+#endif
 
 instance Applicative (FieldDescrs s) where
     pure _  = F mempty
     f <*> x = F (mappend (runF f) (runF x))
 
-singletonF :: P.FieldName -> (s -> Disp.Doc) -> (forall m. P.CabalParsing m => s -> m s) -> FieldDescrs s a
+singletonF :: P.FieldName -> (s -> Disp.Doc) -> (forall m. (P.CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                                                           , Total m
+#endif
+                                                           ) => s -> m s) -> FieldDescrs s a
 singletonF fn f g = F $ Map.singleton fn (SP f g)
 
 -- | Lookup a field value pretty-printer.
@@ -44,11 +66,19 @@ fieldDescrPretty :: FieldDescrs s a -> P.FieldName -> Maybe (s -> Disp.Doc)
 fieldDescrPretty (F m) fn = pPretty <$> Map.lookup fn m
 
 -- | Lookup a field value parser.
-fieldDescrParse :: P.CabalParsing m => FieldDescrs s a -> P.FieldName -> Maybe (s -> m s)
+fieldDescrParse :: (P.CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                   , Total m
+#endif
+                   ) => FieldDescrs s a -> P.FieldName -> Maybe (s -> m s)
 fieldDescrParse (F m) fn = pParse <$> Map.lookup fn m
 
 fieldDescrsToList
-    :: P.CabalParsing m
+    :: (P.CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+       , Total m
+#endif
+       )
     => FieldDescrs s a
     -> [(P.FieldName, s -> Disp.Doc, s -> m s)]
 fieldDescrsToList = map mk . Map.toList . runF where
@@ -56,8 +86,16 @@ fieldDescrsToList = map mk . Map.toList . runF where
 
 -- | /Note:/ default values are printed.
 instance FieldGrammar FieldDescrs where
+    -- blurFieldGrammar :: ALens' a b -> FieldDescrs b c -> FieldDescrs a c
     blurFieldGrammar l (F m) = F (fmap blur m) where
+        -- blur :: SP b -> SP a
+        -- g :: forall m. (P.CabalParsing m, m @@ s) => s -> m s
+        -- cloneLens :: (Functor f, Total f) => ALens s t a b -> LensLike f s t a b
+        -- l :: ALens' a b = ALens a a b b = LensLike (Pretext b b) a a b b
         blur (SP f g) = SP (f . aview l) (cloneLens l g)
+        -- cloneLens l f s = runPretext (l pretextSell' s) f
+        -- pretextSell a = Pretext (\afb -> afb a)
+
 
     booleanFieldDef fn l _def = singletonF fn f g where
         f s = Disp.text (show (aview l s))
@@ -97,7 +135,11 @@ instance FieldGrammar FieldDescrs where
     availableSince _ _     = id
     hiddenField _          = F mempty
 
-parsecFreeText :: P.CabalParsing m => m String
+parsecFreeText :: (P.CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                  , m @@ Char, m @@ ([Char] -> [Char]), m @@ ()
+#endif
+                  ) => m String
 parsecFreeText = dropDotLines <$ C.spaces <*> many C.anyChar
   where
     -- Example package with dot lines

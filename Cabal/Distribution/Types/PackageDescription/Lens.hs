@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, FlexibleContexts #-}
+#endif
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 module Distribution.Types.PackageDescription.Lens (

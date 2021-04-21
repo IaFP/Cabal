@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, TypeFamilies #-}
+#endif
 -- |
 -- This module defines a simple JSON-based format for exporting basic
 -- information about a Cabal package and the compiler configuration Cabal

@@ -1,4 +1,8 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.Simple.Program.Script

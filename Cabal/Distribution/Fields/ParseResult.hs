@@ -1,5 +1,8 @@
-{-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE CPP              #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
+{-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes       #-}
 -- | A parse result type for parsers from AST to Haskell types.
@@ -32,6 +35,9 @@ import           System.Directory             (doesFileExist)
 #if MIN_VERSION_base(4,10,0)
 import Control.Applicative (Applicative (..))
 #endif
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- | A monad with failure and accumulating errors and warnings.
 newtype ParseResult a = PR
@@ -41,6 +47,9 @@ newtype ParseResult a = PR
         -> (PRState -> a -> r)             -- success
         -> r
     }
+#if MIN_VERSION_base(4,14,0)
+instance Total ParseResult
+#endif
 
 data PRState = PRState ![PWarning] ![PError] !(Maybe Version)
 

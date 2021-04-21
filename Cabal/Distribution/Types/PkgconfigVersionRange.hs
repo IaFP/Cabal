@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 module Distribution.Types.PkgconfigVersionRange (
@@ -9,6 +13,9 @@ module Distribution.Types.PkgconfigVersionRange (
     versionToPkgconfigVersion,
     versionRangeToPkgconfigVersionRange,
     ) where
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 import Distribution.Compat.Prelude
 import Prelude ()
@@ -72,7 +79,11 @@ instance Parsec PkgconfigVersionRange where
         else versionRangeToPkgconfigVersionRange <$> versionRangeParser P.integral
 
 -- "modern" parser of @pkg-config@ package versions.
-pkgconfigParser :: CabalParsing m => m PkgconfigVersionRange
+pkgconfigParser :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                   , Total m
+#endif
+                   ) => m PkgconfigVersionRange
 pkgconfigParser = P.spaces >> expr where
     -- every parser here eats trailing space
     expr = do

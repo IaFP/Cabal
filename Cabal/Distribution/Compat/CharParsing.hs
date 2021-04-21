@@ -2,6 +2,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fspec-constr -fspec-constr-count=8 #-}
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures, UndecidableInstances #-}
+#endif
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.Compat.CharParsing
@@ -62,6 +67,9 @@ import Data.Text (Text, unpack)
 import qualified Text.Parsec as Parsec
 
 import Distribution.Compat.Parsing
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total, type (@@))
+#endif
 
 -- | @oneOf cs@ succeeds if the current character is in the supplied
 -- list of characters @cs@. Returns the parsed character. See also
@@ -82,7 +90,11 @@ noneOf xs = satisfy (\c -> c `notElem` xs)
 {-# INLINE noneOf #-}
 
 -- | Skips /zero/ or more white space characters. See also 'skipMany'.
-spaces :: CharParsing m => m ()
+spaces :: (CharParsing m
+#if MIN_VERSION_base(4,14,0)
+          , m @@ Char
+#endif
+          ) => m ()
 spaces = skipMany space <?> "white space"
 {-# INLINE spaces #-}
 
@@ -176,6 +188,9 @@ class Parsing m => CharParsing m where
   -- >  divOrMod    =   string "div"
   -- >              <|> string "mod"
   string :: String -> m String
+#if MIN_VERSION_base(4,14,0)
+  default string :: (m @@ (), m @@ Char, m @@ (() -> ())) => String -> m String
+#endif
   string s = s <$ try (traverse_ char s) <?> show s
   {-# INLINE string #-}
 
@@ -187,10 +202,17 @@ class Parsing m => CharParsing m where
   -- >  divOrMod    =   text "div"
   -- >              <|> text "mod"
   text :: Text -> m Text
+#if MIN_VERSION_base(4,14,0)
+  default text :: m @@ String => Text -> m Text
+#endif
   text t = t <$ string (unpack t)
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m) => CharParsing (Lazy.StateT s m) where
+instance (CharParsing m, MonadPlus m
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (Lazy.StateT s m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -204,7 +226,11 @@ instance (CharParsing m, MonadPlus m) => CharParsing (Lazy.StateT s m) where
   text = lift . text
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m) => CharParsing (Strict.StateT s m) where
+instance (CharParsing m, MonadPlus m
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (Strict.StateT s m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -218,7 +244,11 @@ instance (CharParsing m, MonadPlus m) => CharParsing (Strict.StateT s m) where
   text = lift . text
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m) => CharParsing (ReaderT e m) where
+instance (CharParsing m, MonadPlus m
+#if MIN_VERSION_base(4,14,0)
+         , m @@ (() -> ())
+#endif
+         ) => CharParsing (ReaderT e m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -232,7 +262,11 @@ instance (CharParsing m, MonadPlus m) => CharParsing (ReaderT e m) where
   text = lift . text
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Strict.WriterT w m) where
+instance (CharParsing m, MonadPlus m, Monoid w
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (Strict.WriterT w m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -246,7 +280,11 @@ instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Strict.WriterT w
   text = lift . text
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Lazy.WriterT w m) where
+instance (CharParsing m, MonadPlus m, Monoid w
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (Lazy.WriterT w m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -260,7 +298,11 @@ instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Lazy.WriterT w m
   text = lift . text
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Lazy.RWST r w s m) where
+instance (CharParsing m, MonadPlus m, Monoid w
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (Lazy.RWST r w s m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -274,7 +316,11 @@ instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Lazy.RWST r w s 
   text = lift . text
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Strict.RWST r w s m) where
+instance (CharParsing m, MonadPlus m, Monoid w
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (Strict.RWST r w s m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -288,7 +334,11 @@ instance (CharParsing m, MonadPlus m, Monoid w) => CharParsing (Strict.RWST r w 
   text = lift . text
   {-# INLINE text #-}
 
-instance (CharParsing m, MonadPlus m) => CharParsing (IdentityT m) where
+instance (CharParsing m, MonadPlus m
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (IdentityT m) where
   satisfy = lift . satisfy
   {-# INLINE satisfy #-}
   char    = lift . char
@@ -302,7 +352,11 @@ instance (CharParsing m, MonadPlus m) => CharParsing (IdentityT m) where
   text = lift . text
   {-# INLINE text #-}
 
-instance Parsec.Stream s m Char => CharParsing (Parsec.ParsecT s u m) where
+instance (Parsec.Stream s m Char
+#if MIN_VERSION_base(4,14,0)
+         , Total m
+#endif
+         ) => CharParsing (Parsec.ParsecT s u m) where
   satisfy   = Parsec.satisfy
   char      = Parsec.char
   notChar c = Parsec.satisfy (/= c)
@@ -313,7 +367,11 @@ instance Parsec.Stream s m Char => CharParsing (Parsec.ParsecT s u m) where
 -- Our additions
 -------------------------------------------------------------------------------
 
-integral :: (CharParsing m, Integral a) => m a
+integral :: (CharParsing m, Integral a
+#if MIN_VERSION_base(4,14,0)
+           , m @@ [a], m @@ ([a] -> [a]), m @@ Char
+#endif
+            ) => m a
 integral = toNumber <$> some d <?> "integral"
   where
     toNumber = foldl' (\a b -> a * 10 + b) 0
@@ -333,16 +391,28 @@ integral = toNumber <$> some d <?> "integral"
 
 -- | Greedily munch characters while predicate holds.
 -- Require at least one character.
-munch1 :: CharParsing m => (Char -> Bool) -> m String
+munch1 :: (CharParsing m
+#if MIN_VERSION_base(4,14,0)
+         , m @@ Char, m @@ ([Char] -> [Char])
+#endif
+          ) => (Char -> Bool) -> m String
 munch1 = some . satisfy
 {-# INLINE munch1 #-}
 
 -- | Greedely munch characters while predicate holds.
 -- Always succeeds.
-munch :: CharParsing m => (Char -> Bool) -> m String
+munch :: (CharParsing m
+#if MIN_VERSION_base(4,14,0)
+         , m @@ Char, m @@ ([Char] -> [Char])
+#endif
+         ) => (Char -> Bool) -> m String
 munch = many . satisfy
 {-# INLINE munch #-}
 
-skipSpaces1 :: CharParsing m => m ()
+skipSpaces1 :: (CharParsing m
+#if MIN_VERSION_base(4,14,0)
+              , m @@ Char
+#endif
+               ) => m ()
 skipSpaces1 = skipSome space
 {-# INLINE skipSpaces1 #-}

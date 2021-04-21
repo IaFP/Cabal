@@ -1,7 +1,9 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveFunctor #-}
 -- Note: This module was copied from cabal-install.
-
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 -- | A progress monad, which we use to report failure and logging from
 -- otherwise pure code.
 module Distribution.Utils.Progress
@@ -15,6 +17,9 @@ import Prelude ()
 import Distribution.Compat.Prelude
 
 import qualified Data.Monoid as Mon
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@), Total)
+#endif
 
 
 -- | A type to represent the unfolding of an expensive long running
@@ -30,6 +35,9 @@ data Progress step fail done = Step step (Progress step fail done)
                              | Fail fail
                              | Done done
   deriving (Functor)
+#if MIN_VERSION_base(4,14,0)
+instance Total (Progress step fail)
+#endif
 
 -- | Emit a step and then continue.
 --

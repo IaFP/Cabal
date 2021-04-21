@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Distribution.Types.Dependency
@@ -30,6 +34,9 @@ import Distribution.Types.UnqualComponentName
 
 import Text.PrettyPrint ((<+>))
 import qualified Data.Set as Set
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
+#endif
 
 -- | Describes a dependency on a source package (API)
 --
@@ -68,7 +75,11 @@ instance Pretty Dependency where
         prettySublib LMainLibName = PP.text $ unPackageName name
         prettySublib (LSubLibName un) = PP.text $ unUnqualComponentName un
 
-versionGuardMultilibs :: (Monad m, CabalParsing m) => m a -> m a
+versionGuardMultilibs :: (Monad m, CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                         , m @@ CabalSpecVersion
+#endif
+                         ) => m a -> m a
 versionGuardMultilibs expr = do
   csv <- askCabalSpecVersion
   if csv < CabalSpecV3_0

@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveFoldable      #-}
 {-# LANGUAGE DeriveFunctor       #-}
@@ -44,6 +48,9 @@ import Text.PrettyPrint              ((<+>))
 import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Compat.DList       as DList
 import qualified Text.PrettyPrint                as Disp
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
+#endif
 
 data VersionRange
   = AnyVersion
@@ -270,7 +277,19 @@ instance Parsec VersionRange where
 --   versions, 'PkgConfigVersionRange'.
 --
 -- @since 3.0
-versionRangeParser :: forall m. CabalParsing m => m Int -> m VersionRange
+versionRangeParser :: forall m. (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                                , m @@ Int, m @@ VersionRange, m @@ String, m @@ ()
+                                , m @@ Char, m @@ (() -> VersionRange), m @@ (VersionRange -> VersionRange)
+                                , m @@ ([Char] -> [Char]), m @@ CabalSpecVersion, m @@ NonEmpty Version
+                                , m @@ (Bool, Version), m @@ ([Version] -> [Version]), m @@ [Version]
+                                , m @@ ([Version] -> NonEmpty Version), m @@ (() -> Version), m @@ (() -> ())
+                                , m @@ NonEmpty Int, m @@ ([Int] -> [Int]), m @@ [Int], m @@ ([Int] -> NonEmpty Int)
+                                , m @@ (Int -> Int), m @@ ((Bool, Version) -> (Bool, Version))
+                                , m @@ [[Char]], m @@ ([[Char]] -> [[Char]])
+                                , m @@ [Char], m @@ Version, m @@ (Version -> Version)
+#endif
+                                ) => m Int -> m VersionRange
 versionRangeParser digitParser = expr
       where
         expr   = do P.spaces

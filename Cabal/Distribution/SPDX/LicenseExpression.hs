@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 module Distribution.SPDX.LicenseExpression (
@@ -20,6 +24,9 @@ import Text.PrettyPrint                     ((<+>))
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint                as Disp
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
+#endif
 
 -- | SPDX License Expression.
 --
@@ -100,7 +107,11 @@ instance Parsec SimpleLicenseExpression where
                 then return (ELicenseIdPlus l)
                 else return (ELicenseId l)
 
-idstring :: P.CharParsing m => m String
+idstring :: (P.CharParsing m
+#if MIN_VERSION_base(4,14,0)
+            , m @@ ([Char] -> [Char]), m @@ Char
+#endif
+            ) => m String
 idstring = P.munch1 $ \c -> isAsciiAlphaNum c || c == '-' || c == '.'
 
 -- returns suffix part

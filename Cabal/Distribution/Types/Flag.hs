@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -31,6 +35,9 @@ import Distribution.Pretty
 import qualified Data.Map as Map
 import qualified Text.PrettyPrint as Disp
 import qualified Distribution.Compat.CharParsing as P
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- -----------------------------------------------------------------------------
 -- The Flag' type
@@ -235,7 +242,11 @@ dispFlagAssignment :: FlagAssignment -> Disp.Doc
 dispFlagAssignment = Disp.hsep . map (Disp.text . showFlagValue) . unFlagAssignment
 
 -- | Parses a flag assignment.
-parsecFlagAssignment :: CabalParsing m => m FlagAssignment
+parsecFlagAssignment :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                        , Total m
+#endif
+                        ) => m FlagAssignment
 parsecFlagAssignment = mkFlagAssignment <$>
                        P.sepBy (onFlag <|> offFlag) P.skipSpaces1
   where

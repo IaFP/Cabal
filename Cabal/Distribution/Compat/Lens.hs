@@ -1,4 +1,8 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RankNTypes #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, FlexibleContexts #-}
+#endif
 -- | This module provides very basic lens functionality, without extra dependencies.
 --
 -- For the documentation of the combinators see <http://hackage.haskell.org/package/lens lens> package.
@@ -55,16 +59,38 @@ import Control.Monad.State.Class (MonadState (..), gets, modify)
 
 import qualified Distribution.Compat.DList as DList
 import qualified Data.Set as Set
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total, type (@@))
+#endif
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
 
-type LensLike  f s t a b = (a -> f b) -> s -> f t
-type LensLike' f s   a   = (a -> f a) -> s -> f s
+type LensLike  f s t a b =
+#if MIN_VERSION_base(4,14,0)
+                            -- (f @@ b, f @@ t) =>
+                            (Total f) => 
+#endif
+                            (a -> f b) -> s -> f t
+type LensLike' f s   a   =
+#if MIN_VERSION_base(4,14,0)
+                            -- (f @@ a, f @@ s) =>
+                            (Total f) => 
+#endif
 
-type Lens      s t a b = forall f. Functor f     => LensLike f s t a b
-type Traversal s t a b = forall f. Applicative f => LensLike f s t a b
+                            (a -> f a) -> s -> f s
+
+type Lens      s t a b = forall f. (Functor f
+#if MIN_VERSION_base(4,14,0)
+                                   , Total f
+#endif
+                                   ) => LensLike f s t a b
+type Traversal s t a b = forall f. (Applicative f
+#if MIN_VERSION_base(4,14,0)
+                                   , Total f
+#endif
+                                   ) => LensLike f s t a b
 
 type Lens'      s a = Lens s s a a
 type Traversal' s a = Traversal s s a a
@@ -85,7 +111,11 @@ view :: Getting a s a -> s ->  a
 view l s = getConst (l Const s)
 {-# INLINE view #-}
 
-use :: MonadState s m => Getting a s a -> m a
+use :: (MonadState s m
+#if MIN_VERSION_base(4,14,0)
+       , m @@ s
+#endif
+       ) => Getting a s a -> m a
 use l = gets (view l)
 {-# INLINE use #-}
 
@@ -186,7 +216,7 @@ l ?= b = modify (l ?~ b)
 l %= f = modify (l %~ f)
 {-# INLINE (%=) #-}
 
-(^#) :: s -> ALens s t a b -> a
+(^#) ::  s -> ALens s t a b -> a
 s ^# l = aview l s
 
 (#~) :: ALens s t a b -> b -> s -> t
@@ -213,7 +243,11 @@ pretextPos :: Pretext a b t -> a
 pretextPos (Pretext m) = getConst (m Const)
 {-# INLINE pretextPos #-}
 
-cloneLens :: Functor f => ALens s t a b -> LensLike f s t a b
+cloneLens :: (Functor f
+#if MIN_VERSION_base(4,14,0)
+             , Total f
+#endif
+             ) => ALens s t a b -> LensLike f s t a b
 cloneLens l f s = runPretext (l pretextSell s) f
 {-# INLINE cloneLens #-}
 
@@ -222,8 +256,14 @@ cloneLens l f s = runPretext (l pretextSell s) f
 -------------------------------------------------------------------------------
 
 -- | @lens@ variant is also parametrised by profunctor.
-data Pretext a b t = Pretext { runPretext :: forall f. Functor f => (a -> f b) -> f t }
-
+newtype Pretext a b t = Pretext { runPretext :: forall f. (Functor f
+#if MIN_VERSION_base(4,14,0)
+                                                       , Total f
+#endif
+                                                       ) => (a -> f b) -> f t }
+#if MIN_VERSION_base(4,14,0)
+instance  Total (Pretext a b)
+#endif
 instance Functor (Pretext a b) where
     fmap f (Pretext pretext) = Pretext (\afb -> fmap f (pretext afb))
 

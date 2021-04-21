@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
@@ -31,6 +35,9 @@ import qualified Distribution.Fields.Parser as P
 
 import qualified Data.ByteString  as BS
 import qualified Text.PrettyPrint as PP
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@), Total)
+#endif
 
 data PrettyField ann
     = PrettyField ann FieldName PP.Doc
@@ -127,8 +134,11 @@ renderField opts@(Opts rann indent) _ (PrettySection ann name args fields) = Blo
 -------------------------------------------------------------------------------
 
 genericFromParsecFields
-    :: Applicative f
-    => (FieldName -> [P.FieldLine ann] -> f PP.Doc)     -- ^ transform field contents
+    :: (Applicative f
+#if MIN_VERSION_base(4,14,0)
+      , Total f
+#endif
+       ) => (FieldName -> [P.FieldLine ann] -> f PP.Doc)     -- ^ transform field contents
     -> (FieldName -> [P.SectionArg ann] -> f [PP.Doc])  -- ^ transform section arguments
     -> [P.Field ann]
     -> f [PrettyField ann]

@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PatternGuards #-}
 -- | See <https://github.com/ezyang/ghc-proposals/blob/backpack/proposals/0000-backpack.rst>
@@ -49,6 +53,9 @@ import qualified Data.Set as Set
 
 import Distribution.Version
 import Distribution.Pretty
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- | A 'ReadyComponent' is one that we can actually generate build
 -- products for.  We have a ready component for the typecheck-only
@@ -193,6 +200,9 @@ type InstS = Map UnitId (Maybe ReadyComponent)
 -- | A state monad for doing instantiations (can't use actual
 -- State because that would be an extra dependency.)
 newtype InstM a = InstM { runInstM :: InstS -> (a, InstS) }
+#if MIN_VERSION_base(4,14,0)
+instance Total InstM
+#endif
 
 instance Functor InstM where
     fmap f (InstM m) = InstM $ \s -> let (x, s') = m s

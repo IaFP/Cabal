@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -53,6 +57,9 @@ import Distribution.Pretty
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
+#endif
 
 -- | How strict to be when classifying strings into the 'OS' and 'Arch' enums.
 --
@@ -252,7 +259,11 @@ buildPlatform = Platform buildArch buildOS
 
 -- Utils:
 
-parsecIdent :: CabalParsing m => m String
+parsecIdent :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+               , m @@ Char, m @@ ([Char] -> [Char])
+#endif
+               ) => m String
 parsecIdent = (:) <$> firstChar <*> rest
   where
     firstChar = P.satisfy isAlpha

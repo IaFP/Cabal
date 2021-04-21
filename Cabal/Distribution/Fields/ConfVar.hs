@@ -1,4 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 module Distribution.Fields.ConfVar (parseConditionConfVar) where
 
 import Distribution.Compat.CharParsing              (char, integral)

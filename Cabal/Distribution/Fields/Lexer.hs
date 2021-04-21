@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP,MagicHash #-}
 {-# LINE 1 "boot/Lexer.x" #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures #-}
+#endif
 
 -----------------------------------------------------------------------------
 -- |

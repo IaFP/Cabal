@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -17,6 +21,9 @@ import Distribution.Utils.Progress
 import Distribution.Verbosity
 import Distribution.Simple.Utils
 import Text.PrettyPrint
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 type CtxMsg = Doc
 type LogMsg = Doc
@@ -30,6 +37,9 @@ data LogEnv = LogEnv {
 -- | The 'Progress' monad with specialized logging and
 -- error messages.
 newtype LogProgress a = LogProgress { unLogProgress :: LogEnv -> Progress LogMsg ErrMsg a }
+#if MIN_VERSION_base(4,14,0)
+instance Total LogProgress
+#endif
 
 instance Functor LogProgress where
     fmap f (LogProgress m) = LogProgress (fmap (fmap f) m)

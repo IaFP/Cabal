@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -55,6 +59,9 @@ import Distribution.Utils.Base62
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -----------------------------------------------------------------------
 -- OpenUnitId
@@ -226,7 +233,11 @@ dispOpenModuleSubstEntry (k, v) = pretty k <<>> Disp.char '=' <<>> pretty v
 -- | Inverse to 'dispModSubst'.
 --
 -- @since 2.2
-parsecOpenModuleSubst :: CabalParsing m => m OpenModuleSubst
+parsecOpenModuleSubst :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                              , Total m
+#endif
+                         ) => m OpenModuleSubst
 parsecOpenModuleSubst = fmap Map.fromList
       . flip P.sepBy (P.char ',')
       $ parsecOpenModuleSubstEntry
@@ -234,7 +245,11 @@ parsecOpenModuleSubst = fmap Map.fromList
 -- | Inverse to 'dispModSubstEntry'.
 --
 -- @since 2.2
-parsecOpenModuleSubstEntry :: CabalParsing m => m (ModuleName, OpenModule)
+parsecOpenModuleSubstEntry :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                              , Total m
+#endif
+                              ) => m (ModuleName, OpenModule)
 parsecOpenModuleSubstEntry =
     do k <- parsec
        _ <- P.char '='

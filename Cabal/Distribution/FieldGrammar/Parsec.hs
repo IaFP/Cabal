@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveFunctor       #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -86,6 +90,9 @@ import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 import Distribution.Parsec.Position        (positionCol, positionRow)
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -------------------------------------------------------------------------------
 -- Auxiliary types
@@ -103,6 +110,9 @@ namelessFieldAnn (MkNamelessField ann _) = ann
 -- | The 'Section' constructor of 'Field'.
 data Section ann = MkSection !(Name ann) [SectionArg ann] [Field ann]
   deriving (Eq, Show, Functor)
+#if MIN_VERSION_base(4,14,0)
+instance Total Section
+#endif
 
 -------------------------------------------------------------------------------
 -- ParsecFieldGrammar
@@ -114,6 +124,10 @@ data ParsecFieldGrammar s a = ParsecFG
     , fieldGrammarParser        :: !(CabalSpecVersion -> Fields Position -> ParseResult a)
     }
   deriving (Functor)
+#if MIN_VERSION_base(4,14,0)
+-- instance Total (ParsecFieldGrammar)
+instance Total (ParsecFieldGrammar s)
+#endif
 
 parseFieldGrammar :: CabalSpecVersion -> Fields Position -> ParsecFieldGrammar s a -> ParseResult a
 parseFieldGrammar v fields grammar = do

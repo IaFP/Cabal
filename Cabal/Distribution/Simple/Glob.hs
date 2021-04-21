@@ -1,6 +1,10 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 
 -----------------------------------------------------------------------------
 -- |
@@ -123,7 +127,7 @@ data Glob
 
 data GlobFinal
   = FinalMatch IsRecursive MultiDot String
-    -- ^ First argument: Is this a @**/*.ext@ pattern?
+    -- ^ First argument: Is this a @\*\*/\*.ext@ pattern?
     --   Second argument: should we match against the exact extensions, or accept a suffix?
     --   Third argument: the extensions to accept.
   | FinalLit FilePath

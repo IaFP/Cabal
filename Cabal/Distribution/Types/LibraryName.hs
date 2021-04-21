@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 
@@ -22,6 +26,9 @@ import Distribution.Parsec
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 data LibraryName = LMainLibName
                  | LSubLibName UnqualComponentName
@@ -40,7 +47,11 @@ prettyLibraryNameComponent :: LibraryName -> Disp.Doc
 prettyLibraryNameComponent LMainLibName      = Disp.text "lib"
 prettyLibraryNameComponent (LSubLibName str) = Disp.text "lib:" <<>> pretty str
 
-parsecLibraryNameComponent :: CabalParsing m => m LibraryName
+parsecLibraryNameComponent :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                              , Total m
+#endif
+                              ) => m LibraryName
 parsecLibraryNameComponent = do
     _ <- P.string "lib"
     parseComposite <|> parseSingle

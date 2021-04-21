@@ -1,4 +1,8 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE NondecreasingIndentation #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, TypeFamilies #-}
+#endif
 -- | A simple mutable union-find data structure.
 --
 -- It is used in a unification algorithm for backpack mix-in linking.
@@ -17,11 +21,18 @@ module Distribution.Utils.UnionFind (
 import Data.STRef
 import Control.Monad
 import Control.Monad.ST
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
+#endif
 
 -- | A variable which can be unified; alternately, this can be thought
 -- of as an equivalence class with a distinguished representative.
 newtype Point s a = Point (STRef s (Link s a))
     deriving (Eq)
+#if MIN_VERSION_base(4,14,0)
+type instance Point @@ s = ()
+type instance Point s @@ a = ()
+#endif
 
 -- | Mutable write to a 'Point'
 writePoint :: Point s a -> Link s a -> ST s ()
@@ -38,6 +49,10 @@ data Link s a
     -- NB: it is too bad we can't say STRef Int#; the weights remain boxed
     = Info {-# UNPACK #-} !(STRef s Int) {-# UNPACK #-} !(STRef s a)
     | Link {-# UNPACK #-} !(Point s a)
+#if MIN_VERSION_base(4,14,0)
+type instance Link @@ s = ()
+type instance Link s @@ a = ()
+#endif
 
 -- | Create a fresh equivalence class with one element.
 fresh :: a -> ST s (Point s a)

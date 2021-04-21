@@ -5,6 +5,10 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods #-}
+#endif
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.Compat.Graph

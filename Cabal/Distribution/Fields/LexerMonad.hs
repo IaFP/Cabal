@@ -1,4 +1,8 @@
 {-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures #-}
+#endif
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.Fields.LexerMonad
@@ -46,9 +50,15 @@ import qualified Data.Text          as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Vector        as V
 #endif
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- simple state monad
 newtype Lex a = Lex { unLex :: LexState -> LexResult a }
+#if MIN_VERSION_base(4,14,0)
+instance Total Lex
+#endif
 
 instance Functor Lex where
   fmap = liftM

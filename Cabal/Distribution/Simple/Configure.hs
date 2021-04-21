@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -1096,8 +1100,8 @@ configureDependencies
     -> IO [PreExistingComponent]
 configureDependencies verbosity use_external_internal_deps
   internalPackageSet installedPackageSet requiredDepsMap pkg_descr enableSpec = do
-    let failedDeps :: [FailedDependency]
-        allPkgDeps :: [ResolvedDependency]
+    let -- failedDeps :: [FailedDependency]
+        -- allPkgDeps :: [ResolvedDependency]
         (failedDeps, allPkgDeps) = partitionEithers $ concat
           [ fmap (\s -> (dep, s)) <$> status
           | dep <- enabledBuildDepends pkg_descr enableSpec

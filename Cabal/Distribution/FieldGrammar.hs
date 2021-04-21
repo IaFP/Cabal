@@ -1,6 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+{-# LANGUAGE RankNTypes #-}
+#endif
+
+
 -- | This module provides a way to specify a grammar of @.cabal@ -like files.
 module Distribution.FieldGrammar  (
     -- * Field grammar type

@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.PackageDescription.Check
@@ -78,6 +82,9 @@ import qualified Distribution.Utils.ShortText as ShortText
 import qualified Distribution.Types.BuildInfo.Lens                 as L
 import qualified Distribution.Types.GenericPackageDescription.Lens as L
 import qualified Distribution.Types.PackageDescription.Lens        as L
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- | Results of some kind of failed package check.
 --
@@ -1920,7 +1927,11 @@ data CheckPackageContentOps m = CheckPackageContentOps {
 -- The point of this extra generality is to allow doing checks in some virtual
 -- file system, for example a tarball in memory.
 --
-checkPackageContent :: Monad m => CheckPackageContentOps m
+checkPackageContent :: (Monad m
+#if MIN_VERSION_base(4,14,0)
+                      , Total m
+#endif
+                       ) => CheckPackageContentOps m
                     -> PackageDescription
                     -> m [PackageCheck]
 checkPackageContent ops pkg = do
@@ -1937,7 +1948,11 @@ checkPackageContent ops pkg = do
         ++ localPathErrors
         ++ vcsLocation
 
-checkCabalFileBOM :: Monad m => CheckPackageContentOps m
+checkCabalFileBOM :: (Monad m
+#if MIN_VERSION_base(4,14,0)
+                     , Total m
+#endif
+                     ) => CheckPackageContentOps m
                   -> m (Maybe PackageCheck)
 checkCabalFileBOM ops = do
   epdfile <- findPackageDesc ops
@@ -1959,7 +1974,11 @@ checkCabalFileBOM ops = do
     bomUtf8 :: BS.ByteString
     bomUtf8 = BS.pack [0xef,0xbb,0xbf] -- U+FEFF encoded as UTF8
 
-checkCabalFileName :: Monad m => CheckPackageContentOps m
+checkCabalFileName :: (Monad m
+#if MIN_VERSION_base(4,14,0)
+                     , Total m
+#endif
+                      ) => CheckPackageContentOps m
                  -> PackageDescription
                  -> m (Maybe PackageCheck)
 checkCabalFileName ops pkg = do
@@ -1983,7 +2002,11 @@ checkCabalFileName ops pkg = do
 -- |Find a package description file in the given directory.  Looks for
 -- @.cabal@ files.  Like 'Distribution.Simple.Utils.findPackageDesc',
 -- but generalized over monads.
-findPackageDesc :: Monad m => CheckPackageContentOps m
+findPackageDesc :: (Monad m
+#if MIN_VERSION_base(4,14,0)
+                   , Total m
+#endif
+                   ) => CheckPackageContentOps m
                  -> m (Either PackageCheck FilePath) -- ^<pkgname>.cabal
 findPackageDesc ops
  = do let dir = "."
@@ -2011,7 +2034,11 @@ findPackageDesc ops
                   ++ "Please use only one of: "
                   ++ intercalate ", " l
 
-checkLicensesExist :: Monad m => CheckPackageContentOps m
+checkLicensesExist :: (Monad m
+#if MIN_VERSION_base(4,14,0)
+                       , Total m
+#endif
+                      ) => CheckPackageContentOps m
                    -> PackageDescription
                    -> m [PackageCheck]
 checkLicensesExist ops pkg = do
@@ -2048,7 +2075,11 @@ checkConfigureExists ops pd
           ++ "You probably need to run 'autoreconf -i' to generate it."
   | otherwise = return Nothing
 
-checkLocalPathsExist :: Monad m => CheckPackageContentOps m
+checkLocalPathsExist :: (Monad m
+#if MIN_VERSION_base(4,14,0)
+                       , Total m
+#endif
+                        ) => CheckPackageContentOps m
                      -> PackageDescription
                      -> m [PackageCheck]
 checkLocalPathsExist ops pkg = do
@@ -2068,7 +2099,11 @@ checkLocalPathsExist ops pkg = do
            }
          | (dir, kind) <- missing ]
 
-checkMissingVcsInfo :: Monad m => CheckPackageContentOps m
+checkMissingVcsInfo :: (Monad m
+#if MIN_VERSION_base(4,14,0)
+                       , Total m
+#endif
+                       ) => CheckPackageContentOps m
                     -> PackageDescription
                     -> m [PackageCheck]
 checkMissingVcsInfo ops pkg | null (sourceRepos pkg) = do

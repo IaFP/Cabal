@@ -1,3 +1,9 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures
+    , FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
+#endif
 module Distribution.FieldGrammar.Class (
     FieldGrammar (..),
     uniqueField,
@@ -17,6 +23,9 @@ import Distribution.Fields.Field
 import Distribution.Parsec           (Parsec)
 import Distribution.Pretty           (Pretty)
 import Distribution.Utils.ShortText
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total, type (@@))
+#endif
 
 -- | 'FieldGrammar' is parametrised by
 --
@@ -135,7 +144,7 @@ class FieldGrammar g where
 
 -- | Field which can be defined at most once.
 uniqueField
-    :: (FieldGrammar g, Parsec a, Pretty a)
+    :: (FieldGrammar g, Parsec a, Pretty a )
     => FieldName   -- ^ field name
     -> ALens' s a  -- ^ lens into the field
     -> g s a
@@ -168,7 +177,11 @@ monoidalField fn = monoidalFieldAla fn Identity
 
 -- | Default implementation for 'freeTextFieldDefST'.
 defaultFreeTextFieldDefST
-    :: (Functor (g s), FieldGrammar g)
+    :: (Functor (g s), FieldGrammar g
+#if MIN_VERSION_base(4,14,0)
+       , g s @@ String
+#endif
+       )
     => FieldName
     -> ALens' s ShortText -- ^ lens into the field
     -> g s ShortText

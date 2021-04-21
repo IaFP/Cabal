@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE RankNTypes         #-}
@@ -21,6 +25,9 @@ import qualified Data.Map                   as Map
 import qualified Data.Set                   as Set
 import qualified Distribution.Compat.CharParsing as P
 import           Text.PrettyPrint           (hsep, parens, punctuate, text, (<+>), comma)
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- | Renaming applied to the modules provided by a package.
 -- The boolean indicates whether or not to also include all of the
@@ -103,8 +110,11 @@ instance Parsec ModuleRenaming where
             P.space *> fail "space after parenthesis, use cabal-version: 3.0 or higher"
 
 moduleRenamingParsec
-    :: CabalParsing m
-    => (forall a. m a -> m a)  -- ^ between parens
+    :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+      , Total m
+#endif
+       ) => (forall a. m a -> m a)  -- ^ between parens
     -> m ModuleName            -- ^ module name parser
     -> m ModuleRenaming
 moduleRenamingParsec bp mn =

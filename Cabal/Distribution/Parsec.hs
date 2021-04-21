@@ -3,6 +3,9 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures #-}
+#endif
 module Distribution.Parsec (
     Parsec(..),
     ParsecParser (..),
@@ -55,6 +58,9 @@ import Prelude ()
 import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Compat.MonadFail   as Fail
 import qualified Text.Parsec                     as Parsec
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total, type (@@))
+#endif
 
 -------------------------------------------------------------------------------
 -- Class
@@ -65,7 +71,11 @@ import qualified Text.Parsec                     as Parsec
 -- For parsing @.cabal@ like file structure, see "Distribution.Fields".
 --
 class Parsec a where
-    parsec :: CabalParsing m => m a
+    parsec :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+              , Total m             
+#endif
+              ) => m a
 
 -- | Parsing class which
 --
@@ -73,22 +83,37 @@ class Parsec a where
 --
 -- * knows @cabal-version@ we work with
 --
-class (P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
+class (P.CharParsing m, MonadPlus m, Fail.MonadFail m, Functor m, Monad m, Alternative m) => CabalParsing m where
     parsecWarning :: PWarnType -> String -> m ()
 
     parsecHaskellString :: m String
+#if MIN_VERSION_base(4,14,0)
+    default parsecHaskellString :: (m @@ [Maybe Char], m @@ Char
+                                   , m @@ (Char -> [Maybe Char]), m @@ ([Maybe Char] -> [Maybe Char])
+                                   , m @@ Maybe Char, m @@ (Maybe Char -> Maybe Char)
+                                   , m @@ (), m @@ (Char -> Char),  m @@ ([Char] -> [Char])
+                                   , m @@ (() -> [Char]), m @@ (Int -> Int), m @@ Int
+                                   ) => m String
+#endif
     parsecHaskellString = stringLiteral
 
     askCabalSpecVersion :: m CabalSpecVersion
 
 -- | 'parsec' /could/ consume trailing spaces, this function /will/ consume.
-lexemeParsec :: (CabalParsing m, Parsec a) => m a
+lexemeParsec :: (CabalParsing m, Parsec a
+#if MIN_VERSION_base(4,14,0)
+                , Total m
+#endif
+                ) => m a
 lexemeParsec = parsec <* P.spaces
 
 newtype ParsecParser a = PP { unPP
     :: CabalSpecVersion -> Parsec.Parsec FieldLineStream [PWarning] a
     }
-
+#if MIN_VERSION_base(4,14,0)
+instance Total ParsecParser
+#endif
+  
 liftParsec :: Parsec.Parsec FieldLineStream [PWarning] a -> ParsecParser a
 liftParsec p = PP $ \_ -> p
 
@@ -211,14 +236,26 @@ instance Parsec Bool where
                 "Boolean values are case sensitive, use 'True' or 'False'."
 
 -- | @[^ ,]@
-parsecToken :: CabalParsing m => m String
+parsecToken :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                , m @@ ([Char] -> [Char]), m @@ Char, m @@ ()
+#endif
+               ) => m String
 parsecToken = parsecHaskellString <|> ((P.munch1 (\x -> not (isSpace x) && x /= ',')  P.<?> "identifier" ) >>= checkNotDoubleDash)
 
 -- | @[^ ]@
-parsecToken' :: CabalParsing m => m String
+parsecToken' :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                , m @@ ([Char] -> [Char]), m @@ Char, m @@ ()
+#endif
+                ) => m String
 parsecToken' = parsecHaskellString <|> ((P.munch1 (not . isSpace) P.<?> "token") >>= checkNotDoubleDash)
 
-checkNotDoubleDash ::  CabalParsing m => String -> m String
+checkNotDoubleDash ::  (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                       , m @@ ()
+#endif
+                       ) => String -> m String
 checkNotDoubleDash s = do
     when (s == "--") $ parsecWarning PWTDoubleDash $ unwords
         [ "Double-dash token found."
@@ -228,11 +265,19 @@ checkNotDoubleDash s = do
 
     return s
 
-parsecFilePath :: CabalParsing m => m FilePath
+parsecFilePath :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                  , m @@ ([Char] -> [Char]), m @@ Char, m @@ ()
+#endif
+                  ) => m FilePath
 parsecFilePath = parsecToken
 
 -- | Parse a benchmark/test-suite types.
-parsecStandard :: (CabalParsing m, Parsec ver) => (ver -> String -> a) -> m a
+parsecStandard :: (CabalParsing m, Parsec ver
+#if MIN_VERSION_base(4,14,0)
+                  , Total m
+#endif
+                  ) => (ver -> String -> a) -> m a
 parsecStandard f = do
     cs   <- some $ P.try (component <* P.char '-')
     ver  <- parsec
@@ -245,7 +290,14 @@ parsecStandard f = do
       -- each component must contain an alphabetic character, to avoid
       -- ambiguity in identifiers like foo-1 (the 1 is the version number).
 
-parsecCommaList :: CabalParsing m => m a -> m [a]
+parsecCommaList :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                   , m @@ (), m @@ (a -> a), m @@ ([a] -> [a])
+                   , m @@ ([a] -> NonEmpty a), m @@ NonEmpty a
+                   , m @@ (() -> a),  m @@ Char
+                   , m @@ (() -> ())
+#endif
+                   ) => m a -> m [a]
 parsecCommaList p = P.sepBy (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma")
 
 -- | Like 'parsecCommaList' but accept leading or trailing comma.
@@ -255,7 +307,13 @@ parsecCommaList p = P.sepBy (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma
 -- (comma p)*    -- leading comma
 -- (p comma)*    -- trailing comma
 -- @
-parsecLeadingCommaList :: CabalParsing m => m a -> m [a]
+parsecLeadingCommaList :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                          , m @@ Maybe (), m @@ NonEmpty a, m @@ (a -> a), m @@ ([a] -> [a])
+                          , m @@ ([a] -> NonEmpty a), m @@ (), m @@ (() -> a), m @@ Char, m @@ (() -> ())
+#endif
+
+                          ) => m a -> m [a]
 parsecLeadingCommaList p = do
     c <- P.optional comma
     case c of
@@ -265,7 +323,12 @@ parsecLeadingCommaList p = do
     lp = p <* P.spaces
     comma = P.char ',' *> P.spaces P.<?> "comma"
 
-parsecOptCommaList :: CabalParsing m => m a -> m [a]
+parsecOptCommaList :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                      , m @@ Maybe (), m @@ (a -> a), m @@ ([a] -> [a]), m @@ ([a] -> NonEmpty a), m @@ NonEmpty a
+                      , m @@ (), m @@ (() -> a), m @@ Char, m @@ (() -> ())
+#endif
+                      ) => m a -> m [a]
 parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
   where
     comma = P.char ',' *> P.spaces
@@ -284,7 +347,12 @@ parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
 --
 -- @since 3.0.0.0
 --
-parsecLeadingOptCommaList :: CabalParsing m => m a -> m [a]
+parsecLeadingOptCommaList :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                             , m @@ (() -> ()), m @@ (), m @@ (() -> a), m @@ Char, m @@ Maybe ()
+                             , m @@ ([a] -> [a]), m @@ (a -> a), m @@ ([a] -> NonEmpty a), m @@ NonEmpty a
+#endif
+                             ) => m a -> m [a]
 parsecLeadingOptCommaList p = do
     c <- P.optional comma
     case c of
@@ -302,24 +370,47 @@ parsecLeadingOptCommaList p = do
             Just _  -> (x :) <$> P.sepEndBy lp comma
 
 -- | Content isn't unquoted
-parsecQuoted :: CabalParsing m => m a -> m a
+parsecQuoted :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                , m @@ Char, m @@ (Char -> a), m @@ (a -> a)
+#endif
+                ) => m a -> m a
 parsecQuoted = P.between (P.char '"') (P.char '"')
 
 -- | @parsecMaybeQuoted p = 'parsecQuoted' p <|> p@.
-parsecMaybeQuoted :: CabalParsing m => m a -> m a
+parsecMaybeQuoted :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                     , m @@ (a -> a), m @@ (Char -> a), m @@ Char
+#endif
+                     ) => m a -> m a
 parsecMaybeQuoted p = parsecQuoted p <|> p
 
-parsecUnqualComponentName :: CabalParsing m => m String
+parsecUnqualComponentName :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                             , m @@ NonEmpty String, m @@ Char, m @@ (String -> String)
+                             , m @@ ([String] -> [String]), m @@ [String], m @@ ([String] -> NonEmpty String)
+#endif
+                             ) => m String
 parsecUnqualComponentName = intercalate "-" <$> toList <$> P.sepByNonEmpty component (P.char '-')
   where
-    component :: CabalParsing m => m String
+    component :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                 , m @@ ([Char] -> [Char]), m @@ Char
+#endif                 
+                 ) => m String
     component = do
       cs <- P.munch1 isAlphaNum
       if all isDigit cs
         then fail "all digits in portion of unqualified component name"
         else return cs
 
-stringLiteral :: forall m. P.CharParsing m => m String
+stringLiteral :: forall m. (P.CharParsing m
+#if MIN_VERSION_base(4,14,0)
+                           , m @@ String, m @@ [Maybe Char], m @@ Char, m @@ (Char -> [Maybe Char])
+                           , m @@ ([Maybe Char] -> [Maybe Char]), m @@ Maybe Char, m @@ (Maybe Char -> Maybe Char)
+                           , m @@ (), m @@ (Char -> Char), m @@ ([Char] -> [Char]), m @@ (() -> [Char]), m @@ (Int -> Int), m @@ Int
+#endif
+                           ) => m String
 stringLiteral = lit where
     lit :: m String
     lit = foldr (maybe id (:)) ""
@@ -345,7 +436,12 @@ stringLiteral = lit where
     escapeEmpty = P.char '&'
     escapeGap = P.skipSpaces1 *> (P.char '\\' P.<?> "end of string gap")
 
-escapeCode :: forall m. P.CharParsing m => m Char
+escapeCode :: forall m. (P.CharParsing m
+#if MIN_VERSION_base(4,14,0)
+                       , m @@ Char,  m @@ ([Char] -> [Char]), m @@ (() -> [Char]), m @@ (), m @@ [Char], m @@ (Int -> Int), m @@ Int
+                       , m @@ (Char -> Char)
+#endif
+                        ) => m Char
 escapeCode = (charEsc <|> charNum <|> charAscii <|> charControl) P.<?> "escape code"
   where
   charControl, charNum :: m Char
@@ -390,7 +486,11 @@ escapeCode = (charEsc <|> charNum <|> charAscii <|> charControl) P.<?> "escape c
       atMost n p | n <= 0    = pure []
                  | otherwise = ((:) <$> p <*> atMost (n - 1) p) <|> pure []
 
-  charEsc :: m Char
+  charEsc ::
+#if MIN_VERSION_base(4,14,0)
+    (m @@ String) => 
+#endif
+    m Char
   charEsc = P.choice $ parseEsc <$> escMap
 
   parseEsc (c,code) = code <$ P.char c

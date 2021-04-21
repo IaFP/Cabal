@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, TypeFamilies #-}
+#endif
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | See <https://github.com/ezyang/ghc-proposals/blob/backpack/proposals/0000-backpack.rst>
@@ -72,6 +76,9 @@ import Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import qualified Data.Traversable as T
 import Text.PrettyPrint
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@), Total)
+#endif
 
 -- TODO: more detailed trace output on high verbosity would probably
 -- be appreciated by users debugging unification errors.  Collect
@@ -90,6 +97,9 @@ renderErrMsg ErrMsg { err_msg = msg, err_ctx = ctx } =
 -- | The unification monad, this monad encapsulates imperative
 -- unification.
 newtype UnifyM s a = UnifyM { unUnifyM :: UnifEnv s -> ST s (Maybe a) }
+#if MIN_VERSION_base(4,14,0)
+instance Total (UnifyM s)
+#endif
 
 -- | Run a computation in the unification monad.
 runUnifyM :: Verbosity -> ComponentId -> FullDb -> (forall s. UnifyM s a) -> Either [MsgDoc] a
@@ -261,6 +271,11 @@ data ModuleU' s
 data UnitIdU' s
     = UnitIdU UnitIdUnique ComponentId (Map ModuleName (ModuleU s))
     | UnitIdThunkU DefUnitId
+
+#if MIN_VERSION_base(4,14,0)
+type instance ModuleU' @@ s = ()
+type instance UnitIdU' @@ s = ()
+#endif
 
 -- | A mutable version of 'Module' which can be imperatively unified.
 type ModuleU s = UnionFind.Point s (ModuleU' s)

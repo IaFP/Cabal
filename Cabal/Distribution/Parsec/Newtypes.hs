@@ -1,9 +1,14 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
+
 -- | This module provides @newtype@ wrappers to be used with "Distribution.FieldGrammar".
 module Distribution.Parsec.Newtypes (
     -- * List
@@ -48,6 +53,9 @@ import Text.PrettyPrint              (Doc, comma, fsep, punctuate, vcat, (<+>))
 import qualified Data.Set                        as Set
 import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.SPDX               as SPDX
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- | Vertical list with commas. Displayed with 'vcat'
 data CommaVCat = CommaVCat
@@ -67,7 +75,11 @@ data NoCommaFSep = NoCommaFSep
 class    Sep sep  where
     prettySep :: Proxy sep -> [Doc] -> Doc
 
-    parseSep :: CabalParsing m => Proxy sep -> m a -> m [a]
+    parseSep :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                , Total m
+#endif
+                ) => Proxy sep -> m a -> m [a]
 
 instance Sep CommaVCat where
     prettySep  _ = vcat . punctuate comma
@@ -262,7 +274,11 @@ instance Pretty FilePathNT where
 -- Internal
 -------------------------------------------------------------------------------
 
-parsecTestedWith :: CabalParsing m => m (CompilerFlavor, VersionRange)
+parsecTestedWith :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                    , Total m
+#endif
+                    ) => m (CompilerFlavor, VersionRange)
 parsecTestedWith = do
     name <- lexemeParsec
     ver  <- parsec <|> pure anyVersion

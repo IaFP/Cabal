@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 
@@ -61,6 +65,9 @@ import Distribution.Verbosity.Internal
 
 import qualified Data.Set as Set
 import qualified Distribution.Compat.CharParsing as P
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
+#endif
 
 data Verbosity = Verbosity {
     vLevel :: VerbosityLevel,
@@ -162,7 +169,14 @@ intToVerbosity _ = Nothing
 --
 -- /Note:/ this parser will eat trailing spaces.
 --
-parsecVerbosity :: CabalParsing m => m (Either Int Verbosity)
+parsecVerbosity :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                   , m @@ Int, m @@ Char, m @@ ([Int] -> [Int]), m @@ [Int], m @@ Verbosity,  m @@ VerbosityLevel
+                   , m @@ [Verbosity -> Verbosity],m @@ ([Verbosity -> Verbosity] -> [Verbosity -> Verbosity])
+                   , m @@ (() -> Verbosity -> Verbosity), m @@ (Verbosity -> Verbosity)
+                   , m @@ (), m @@ String
+#endif
+                   ) => m (Either Int Verbosity)
 parsecVerbosity = parseIntVerbosity <|> parseStringVerbosity
   where
     parseIntVerbosity = fmap Left P.integral

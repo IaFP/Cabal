@@ -5,6 +5,9 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE BangPatterns #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 
 -----------------------------------------------------------------------------
 -- |
@@ -242,6 +245,10 @@ import System.Process
 import qualified GHC.IO.Exception as GHC
 
 import qualified Text.PrettyPrint as Disp
+
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@), Total)
+#endif
 
 -- We only get our own version number when we're building with ourselves
 cabalVersion :: Version
@@ -798,7 +805,11 @@ createProcessWithEnv verbosity path args mcwd menv inp out err = withFrozenCallS
 --
 -- The output is assumed to be text in the locale encoding.
 --
-rawSystemStdout :: forall mode. KnownIODataMode mode => Verbosity -> FilePath -> [String] -> IO mode 
+rawSystemStdout :: forall mode. (KnownIODataMode mode
+#if MIN_VERSION_base(4,14,0)
+                                , IODataMode @@ mode, [] @@ String
+#endif
+                                ) => Verbosity -> FilePath -> [String] -> IO mode 
 rawSystemStdout verbosity path args = withFrozenCallStack $ do
   (output, errors, exitCode) <- rawSystemStdInOut verbosity path args
     Nothing Nothing Nothing (IOData.iodataMode :: IODataMode mode)

@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.Compat.DList
@@ -20,6 +24,9 @@ module Distribution.Compat.DList (
 
 import Prelude ()
 import Distribution.Compat.Prelude hiding (toList)
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total, type (@@))
+#endif
 
 -- | Difference list.
 newtype DList a = DList ([a] -> [a])

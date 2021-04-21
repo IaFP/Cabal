@@ -12,6 +12,9 @@
 #define MINVER_base_48 (__GLASGOW_HASKELL__ >= 710)
 #define MINVER_base_47 (__GLASGOW_HASKELL__ >= 708)
 #endif
+#if MIN_VERSION_base(4,14,0)
+{-# LANGUAGE PartialTypeConstructors #-}
+#endif
 
 -- | This module does two things:
 --
@@ -169,6 +172,9 @@ import qualified Prelude as OrigPrelude
 import Distribution.Compat.Stack
 
 import Distribution.Utils.Structured (Structured)
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 type IO a = WithCallStack (OrigPrelude.IO a)
 type NoCallStackIO a = OrigPrelude.IO a
@@ -203,7 +209,11 @@ length = foldl' (\c _ -> c+1) 0
 --
 -- The implementation has been taken from @deepseq-1.4.2@'s default
 -- 'rnf' implementation.
-genericRnf :: (Generic a, GNFData (Rep a)) => a -> ()
+genericRnf :: (Generic a, GNFData (Rep a)
+#if MIN_VERSION_base(4,14,0)
+            , Total (Rep a)
+#endif
+              ) => a -> ()
 genericRnf = grnf . from
 
 -- | Hidden internal type-class

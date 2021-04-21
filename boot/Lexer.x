@@ -13,6 +13,9 @@
 #ifdef CABAL_PARSEC_DEBUG
 {-# LANGUAGE PatternGuards #-}
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 module Distribution.Fields.Lexer
   (ltest, lexToken, Token(..), LToken(..)

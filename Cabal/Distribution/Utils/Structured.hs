@@ -12,6 +12,9 @@
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE TypeInType          #-}
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, ConstrainedClassMethods, TypeOperators, UndecidableInstances, UndecidableSuperClasses #-}
+#endif
 -- |
 --
 -- Copyright: (c) 2019 Oleg Grenrus
@@ -123,6 +126,9 @@ import Data.Traversable (traverse)
 
 #if !MIN_VERSION_base(4,7,0)
 import Data.Typeable (Typeable1, typeOf1)
+#endif
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
 #endif
 
 
@@ -326,7 +332,11 @@ nominalStructure p = Nominal tr 0 (show tr) [] where
     tr = typeRep p
 
 #if MIN_VERSION_base(4,7,0)
-containerStructure :: forall f a. (Typeable f, Structured a) => Proxy (f a) -> Structure
+containerStructure :: forall f a. (Typeable f, Structured a
+#if MIN_VERSION_base(4,14,0)
+                                  , f @@ a
+#endif
+                                  ) => Proxy (f a) -> Structure
 containerStructure _ = Nominal faTypeRep 0 (show fTypeRep)
     [ structure (Proxy :: Proxy a)
     ]
@@ -356,7 +366,11 @@ genericStructure _ = gstructured (typeRep (Proxy :: Proxy a)) (Proxy :: Proxy (R
 class GStructured (f :: Type -> Type) where
     gstructured :: TypeRep -> Proxy f -> TypeVersion -> Structure
 
-instance (i ~ D, Datatype c, GStructuredSum f) => GStructured (M1 i c f) where
+instance (i ~ D, Datatype c, GStructuredSum f
+#if MIN_VERSION_base(4,14,0)
+         , f @@ ()
+#endif
+         ) => GStructured (M1 i c f) where
     gstructured tr _ v = case sop of
 #if MIN_VERSION_base(4,7,0)
         [(_, [s])] | isNewtype p -> Newtype tr v name s
@@ -367,16 +381,28 @@ instance (i ~ D, Datatype c, GStructuredSum f) => GStructured (M1 i c f) where
         name = datatypeName p
         sop  = gstructuredSum (Proxy :: Proxy f) []
 
-class GStructuredSum (f :: Type -> Type) where
+class
+#if MIN_VERSION_base(4,14,0)
+                           f @@ () =>
+#endif
+  GStructuredSum (f :: Type -> Type) where
     gstructuredSum :: Proxy f -> SopStructure -> SopStructure
 
-instance (i ~ C, Constructor c, GStructuredProd f) => GStructuredSum (M1 i c f) where
+instance (i ~ C, Constructor c, GStructuredProd f
+#if MIN_VERSION_base(4,14,0)
+         , f @@ ()
+#endif
+         ) => GStructuredSum (M1 i c f) where
     gstructuredSum _ xs = (name, prod) : xs
       where
         name = conName (undefined :: M1 i c f ())
         prod = gstructuredProd (Proxy :: Proxy f) []
 
-instance (GStructuredSum f, GStructuredSum g) => GStructuredSum (f :+: g) where
+instance (GStructuredSum f, GStructuredSum g
+#if MIN_VERSION_base(4,14,0)
+         , f @@ ()
+#endif
+         ) => GStructuredSum (f :+: g) where
     gstructuredSum _ xs
         = gstructuredSum (Proxy :: Proxy f)
         $ gstructuredSum (Proxy :: Proxy g) xs

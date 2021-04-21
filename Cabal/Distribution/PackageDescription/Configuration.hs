@@ -1,4 +1,8 @@
 -- -fno-warn-deprecations for use of Map.foldWithKey
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
 -----------------------------------------------------------------------------
 -- |
@@ -67,6 +71,9 @@ import qualified Data.Map.Strict as Map.Strict
 import qualified Data.Map.Lazy   as Map
 import qualified Data.Set as Set
 import Data.Tree ( Tree(Node) )
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 ------------------------------------------------------------------------------
 
@@ -108,20 +115,29 @@ simplifyWithSysParams os arch cinfo cond = (cond', flags)
 --
 
 -- | Parse a configuration condition from a string.
-parseCondition :: CabalParsing m => m (Condition ConfVar)
+parseCondition :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                  , Total m
+#endif
+                  ) => m (Condition ConfVar)
 parseCondition = condOr
   where
+    -- condOr   :: m (Condition ConfVar)
     condOr   = sepByNonEmpty condAnd (oper "||") >>= return . foldl1 COr
-    condAnd  = sepByNonEmpty cond (oper "&&")>>= return . foldl1 CAnd
+    -- condAnd   :: m (Condition ConfVar)
+    condAnd  = sepByNonEmpty cond (oper "&&") >>= return . foldl1 CAnd
     -- TODO: try?
-    cond     = sp >> (boolLiteral <|> inparens condOr <|> notCond <|> osCond
+    -- cond     :: m (Condition ConfVar)
+    cond     = sp >> (boolLiteral <|> (inparens condOr) <|> notCond <|> osCond
                       <|> archCond <|> flagCond <|> implCond )
-    inparens   = between (P.char '(' >> sp) (sp >> P.char ')' >> sp)
+    -- notCond     :: m (Condition ConfVar)
     notCond  = P.char '!' >> sp >> cond >>= return . CNot
-    osCond   = string "os" >> sp >> inparens osIdent >>= return . Var
-    archCond = string "arch" >> sp >> inparens archIdent >>= return . Var
-    flagCond = string "flag" >> sp >> inparens flagIdent >>= return . Var
-    implCond = string "impl" >> sp >> inparens implIdent >>= return . Var
+    -- osCond :: m (Condition ConfVar)
+    osCond   = (string "os" >> sp >> inparens osIdent) >>= return . Var
+    archCond = (string "arch" >> sp >> inparens archIdent) >>= return . Var
+    flagCond = (string "flag" >> sp >> inparens flagIdent) >>= return . Var
+    implCond = (string "impl" >> sp >> inparens implIdent) >>= return . Var
+    -- boolLiteral :: m (Condition ConfVar)
     boolLiteral   = fmap Lit  parsec
     archIdent     = fmap Arch parsec
     osIdent       = fmap OS   parsec
@@ -132,6 +148,15 @@ parseCondition = condOr
     implIdent     = do i <- parsec
                        vr <- sp >> option anyVersion parsec
                        return $ Impl i vr
+
+inparens  :: (Applicative m, CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+            , Total m
+#endif
+             ) => m a -> m a
+inparens  = between (P.char '(' >> sp) (sp >> P.char ')' >> sp)
+  where
+     sp  = spaces 
 
 ------------------------------------------------------------------------------
 

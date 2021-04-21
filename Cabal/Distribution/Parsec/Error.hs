@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures #-}
+#endif
 {-# LANGUAGE DeriveGeneric #-}
 module Distribution.Parsec.Error (
     PError (..),

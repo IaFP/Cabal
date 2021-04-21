@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveFunctor #-}
 module Distribution.FieldGrammar.Pretty (
     PrettyFieldGrammar,
@@ -17,11 +21,17 @@ import           Text.PrettyPrint              (Doc)
 import qualified Text.PrettyPrint              as PP
 
 import Distribution.FieldGrammar.Class
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types(Total)
+#endif
 
 newtype PrettyFieldGrammar s a = PrettyFG
     { fieldGrammarPretty :: CabalSpecVersion -> s -> [PrettyField ()]
     }
   deriving (Functor)
+#if MIN_VERSION_base(4,14,0)
+instance Total (PrettyFieldGrammar s)
+#endif
 
 instance Applicative (PrettyFieldGrammar s) where
     pure _ = PrettyFG (\_ _ -> mempty)

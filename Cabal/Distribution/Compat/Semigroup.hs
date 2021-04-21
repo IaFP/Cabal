@@ -4,6 +4,9 @@
 {-# LANGUAGE FlexibleContexts            #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving  #-}
 {-# LANGUAGE TypeOperators               #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors  #-}
+#endif
 
 -- | Compatibility layer for "Data.Semigroup"
 module Distribution.Compat.Semigroup
@@ -30,6 +33,9 @@ import GHC.Generics
 -- for older GHC/base, it's provided by `semigroups`
 import Data.Semigroup
 import qualified Data.Monoid as Mon
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@), Total)
+#endif
 
 
 -- | A copy of 'Data.Semigroup.First'.
@@ -79,7 +85,11 @@ instance Semigroup a => Monoid (Option' a) where
 -- @
 -- 'gmappend' a ('gmappend' b c) = 'gmappend' ('gmappend' a b) c
 -- @
-gmappend :: (Generic a, GSemigroup (Rep a)) => a -> a -> a
+gmappend :: (Generic a, GSemigroup (Rep a)
+#if MIN_VERSION_base(4,14,0)
+            , Total (Rep a)
+#endif
+            ) => a -> a -> a
 gmappend x y = to (gmappend' (from x) (from y))
 
 class GSemigroup f where
@@ -103,7 +113,11 @@ instance (GSemigroup f, GSemigroup g) => GSemigroup (f :*: g) where
 -- 'gmappend' 'gmempty' a = a = 'gmappend' a 'gmempty'
 -- @
 
-gmempty :: (Generic a, GMonoid (Rep a)) => a
+gmempty :: (Generic a, GMonoid (Rep a)
+#if MIN_VERSION_base(4,14,0)
+            , Total (Rep a)
+#endif
+           ) => a
 gmempty = to gmempty'
 
 class GSemigroup f => GMonoid f where

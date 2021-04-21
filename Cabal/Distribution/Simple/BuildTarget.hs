@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
@@ -65,6 +69,9 @@ import System.FilePath as FilePath
          , hasTrailingPathSeparator )
 import System.Directory ( doesFileExist, doesDirectoryExist )
 import qualified Data.Map as Map
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- | Take a list of 'String' build targets, and parse and validate them
 -- into actual 'TargetInfo's to be built/registered/whatever.
@@ -214,7 +221,11 @@ readUserBuildTarget targetstr =
       Right tgt -> Right tgt
 
   where
-    parseTargetApprox :: CabalParsing m => m UserBuildTarget
+    parseTargetApprox :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                         , Total m
+#endif
+                         ) => m UserBuildTarget
     parseTargetApprox = do
         -- read one, two, or three tokens, where last could be "hs-string"
         ts <- tokens
@@ -223,15 +234,27 @@ readUserBuildTarget targetstr =
             (a, Just (b, Nothing)) -> UserBuildTargetDouble a b
             (a, Just (b, Just c))  -> UserBuildTargetTriple a b c
 
-    tokens :: CabalParsing m => m (String, Maybe (String, Maybe String))
+    tokens :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+              , Total m
+#endif
+              ) => m (String, Maybe (String, Maybe String))
     tokens = (\s -> (s, Nothing)) <$> parsecHaskellString
         <|> (,) <$> token <*> P.optional (P.char ':' *> tokens2)
 
-    tokens2 :: CabalParsing m => m (String, Maybe String)
+    tokens2 :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+              , Total m
+#endif
+              ) => m (String, Maybe String)
     tokens2 = (\s -> (s, Nothing)) <$> parsecHaskellString
         <|> (,) <$> token <*> P.optional (P.char ':' *> (parsecHaskellString <|> token))
 
-    token :: CabalParsing m => m String
+    token :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+              , Total m
+#endif
+             ) => m String
     token  = P.munch1 (\x -> not (isSpace x) && x /= ':')
 
 data UserBuildTargetProblem

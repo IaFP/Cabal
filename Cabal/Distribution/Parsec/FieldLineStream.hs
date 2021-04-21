@@ -1,7 +1,11 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures #-}
+#endif
 {-# OPTIONS_GHC -Wall -Werror #-}
 module Distribution.Parsec.FieldLineStream (
     FieldLineStream (..),

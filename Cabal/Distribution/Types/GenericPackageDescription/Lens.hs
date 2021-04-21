@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE Rank2Types #-}
 module Distribution.Types.GenericPackageDescription.Lens (
     GenericPackageDescription,
@@ -30,6 +34,9 @@ import Distribution.Types.UnqualComponentName (UnqualComponentName)
 import Distribution.System (Arch, OS)
 import Distribution.Compiler (CompilerFlavor)
 import Distribution.Version (VersionRange)
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total, type (@@))
+#endif
 
 -------------------------------------------------------------------------------
 -- GenericPackageDescription
@@ -68,8 +75,11 @@ condBenchmarks f s = fmap (\x -> s { T.condBenchmarks = x }) (f (T.condBenchmark
 {-# INLINE condBenchmarks #-}
 
 allCondTrees
-  :: Applicative f
-  => (forall a. CondTree ConfVar [Dependency] a
+  :: (Applicative f
+#if MIN_VERSION_base(4,14,0)
+     , Total f
+#endif
+     ) => (forall a. CondTree ConfVar [Dependency] a
           -> f (CondTree ConfVar [Dependency] a))
   -> GenericPackageDescription
   -> f GenericPackageDescription

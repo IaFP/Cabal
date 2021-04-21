@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 module Distribution.Types.MungedPackageName
@@ -17,6 +21,9 @@ import Distribution.Types.UnqualComponentName
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (type (@@))
+#endif
 
 -- | A combination of a package and component name used in various legacy
 -- interfaces, chiefly bundled with a version as 'MungedPackageId'. It's generally
@@ -136,7 +143,13 @@ zdashcode s = go s (Nothing :: Maybe Int) []
           go ('z':z) (Just n) r = go z (Just (n+1)) ('z':r)
           go (c:z)   _        r = go z Nothing (c:r)
 
-parseZDashCode :: CabalParsing m => m [String]
+parseZDashCode :: (CabalParsing m
+#if MIN_VERSION_base(4,14,0)
+                  , m @@ [Char], m @@ Char, m @@ ([Char] -> [Char]), m @@ ([[Char]] -> [[Char]])
+                  , m @@ ([[Char]] -> NonEmpty [Char])
+                  , m @@ NonEmpty [Char]
+#endif
+                  ) => m [String]
 parseZDashCode = do
     ns <- toList <$> P.sepByNonEmpty (some (P.satisfy (/= '-'))) (P.char '-')
     return (go ns)

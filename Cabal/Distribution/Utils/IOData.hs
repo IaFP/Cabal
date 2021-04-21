@@ -1,5 +1,10 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods #-}
+#endif
+
 -- | @since 2.2.0
 module Distribution.Utils.IOData
     ( -- * 'IOData' & 'IODataMode' type

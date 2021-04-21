@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, FlexibleContexts #-}
+#endif
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -37,6 +41,10 @@ import Distribution.Types.InstalledPackageInfo
 
 import qualified Distribution.Types.InstalledPackageInfo.Lens as L
 import qualified Distribution.Types.PackageId.Lens            as L
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total, type (@@))
+import Distribution.Utils.ShortText (ShortText)
+#endif
 
 -- Note: GHC goes nuts and inlines everything,
 -- One can see e.g. in -ddump-simpl-stats:
@@ -53,7 +61,486 @@ f <+> x = f <*> x
 {-# NOINLINE (<+>) #-}
 
 ipiFieldGrammar
-    :: (FieldGrammar g, Applicative (g InstalledPackageInfo), Applicative (g Basic))
+    :: (FieldGrammar g, Applicative (g InstalledPackageInfo), Applicative (g Basic)
+#if MIN_VERSION_base(4,14,0)
+       , Total (g Basic)
+       , g Basic @@ Basic
+       , g Basic @@ MungedPackageName
+       , g Basic @@ Version
+       , g Basic @@ (Version
+                             -> Maybe PackageName
+                             -> Maybe UnqualComponentName
+                             -> LibraryVisibility
+                             -> Basic)
+       , g Basic @@ Maybe PackageName
+       , g Basic @@ (Maybe PackageName
+                             -> Maybe UnqualComponentName -> LibraryVisibility -> Basic)
+       , g Basic @@ Maybe UnqualComponentName
+       , g Basic @@ (Maybe UnqualComponentName -> LibraryVisibility -> Basic)
+       , g Basic @@ LibraryVisibility
+       , g Basic @@ (LibraryVisibility -> Basic)
+       , g InstalledPackageInfo @@ FilePath
+       , g InstalledPackageInfo @@ (Maybe FilePath -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ Maybe FilePath
+       , g InstalledPackageInfo @@ ([FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ [FilePath]
+       , g InstalledPackageInfo @@ ([FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ ([String] -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ ([FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ ([String] -> [String] -> [FilePath] -> [String]
+                                    -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ ([String] -> [String] -> [String] -> [FilePath]
+                                    -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ ([AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ [AbiDependency]
+       , g InstalledPackageInfo
+                         @@ ([UnitId]
+                             -> [AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo)
+       , g InstalledPackageInfo @@ [UnitId]
+       , g InstalledPackageInfo
+                        @@ ([String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+       , g InstalledPackageInfo
+                        @@ ([String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+       , g InstalledPackageInfo
+                        @@ ([FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+      , g InstalledPackageInfo
+                        @@ ([String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+       , g InstalledPackageInfo
+                        @@ ([String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo
+                        @@ ([String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo
+                         @@ (FilePath
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [UnitId]
+                             -> [AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo)
+     , g InstalledPackageInfo
+                        @@ ([FilePath]
+                            -> FilePath
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+    , g InstalledPackageInfo
+                        @@ ([FilePath]
+                            -> [FilePath]
+                            -> FilePath
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+    , g InstalledPackageInfo
+                        @@ ([FilePath]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> FilePath
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo
+                         @@ (Bool
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> FilePath
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [UnitId]
+                             -> [AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ Bool
+     , g InstalledPackageInfo
+                         @@ ([ModuleName]
+                             -> Bool
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> FilePath
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [UnitId]
+                             -> [AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ [ModuleName]
+     , g InstalledPackageInfo
+                         @@ ([ExposedModule]
+                             -> [ModuleName]
+                             -> Bool
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> FilePath
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [UnitId]
+                             -> [AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ [ExposedModule]
+     , g InstalledPackageInfo
+                        @@ (Bool
+                            -> [ExposedModule]
+                            -> [ModuleName]
+                            -> Bool
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> FilePath
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo
+                        @@ (Bool -> Bool
+                            -> [ExposedModule]
+                            -> [ModuleName]
+                            -> Bool
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> FilePath
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [UnitId]
+                            -> [AbiDependency]
+                            -> [String]
+                            -> [String]
+                            -> [String]
+                            -> [FilePath]
+                            -> [String]
+                            -> [FilePath]
+                            -> [FilePath]
+                            -> Maybe FilePath
+                            -> InstalledPackageInfo)
+
+     , g InstalledPackageInfo
+                         @@ (AbiHash
+                             -> Bool
+                             -> Bool
+                             -> [ExposedModule]
+                             -> [ModuleName]
+                             -> Bool
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> FilePath
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [UnitId]
+                             -> [AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ AbiHash
+     , g InstalledPackageInfo @@ (ShortText -> AbiHash
+                             -> Bool
+                             -> Bool
+                             -> [ExposedModule]
+                             -> [ModuleName]
+                             -> Bool
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> FilePath
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [UnitId]
+                             -> [AbiDependency]
+                             -> [String]
+                             -> [String]
+                             -> [String]
+                             -> [FilePath]
+                             -> [String]
+                             -> [FilePath]
+                             -> [FilePath]
+                             -> Maybe FilePath
+                             -> InstalledPackageInfo),
+                         g InstalledPackageInfo @@ ShortText
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> AbiHash -> Bool
+                            -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> ShortText -> AbiHash -> Bool
+                            -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> ShortText -> ShortText -> AbiHash -> Bool
+                            -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> AbiHash -> Bool
+                            -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> AbiHash -> Bool
+                            -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> AbiHash -> Bool -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> ShortText -> ShortText -> AbiHash -> Bool -> Bool -> [ExposedModule] -> [ModuleName]
+                            -> Bool -> [FilePath] -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ (ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> ShortText -> ShortText -> AbiHash -> Bool -> Bool -> [ExposedModule] -> [ModuleName]
+                            -> Bool -> [FilePath] -> [FilePath] -> [FilePath] -> FilePath -> [String]
+                            -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String]
+                            -> [String] -> [FilePath] -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath
+                            -> InstalledPackageInfo)
+     , g InstalledPackageInfo @@ Either SPDX.License License
+     , g InstalledPackageInfo @@ (Either SPDX.License License -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> ShortText -> ShortText -> ShortText -> ShortText -> AbiHash -> Bool -> Bool
+                            -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath] -> [FilePath] -> [FilePath]
+                            -> FilePath -> [String] -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId]
+                            -> [AbiDependency] -> [String] -> [String] -> [String] -> [FilePath] -> [String]
+                            -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+    , g InstalledPackageInfo @@ (String -> Either SPDX.License License -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> ShortText
+                            -> ShortText -> ShortText -> ShortText -> ShortText -> AbiHash -> Bool -> Bool
+                            -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath] -> [FilePath] -> [FilePath]
+                            -> FilePath -> [String] -> [String] -> [String] -> [FilePath] -> [String] -> [UnitId]
+                            -> [AbiDependency] -> [String] -> [String] -> [String] -> [FilePath] -> [String]
+                            -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+    , g InstalledPackageInfo @@ ([(ModuleName, OpenModule)] -> String -> Either SPDX.License License -> ShortText
+                            -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> AbiHash -> Bool -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String] -> [String] -> [String] -> [FilePath]
+                            -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String] -> [String] -> [FilePath]
+                            -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+    , g InstalledPackageInfo @@ [(ModuleName, OpenModule)]
+    , g InstalledPackageInfo @@ (UnitId -> [(ModuleName, OpenModule)] -> String -> Either SPDX.License License -> ShortText
+                            -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> AbiHash -> Bool -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String] -> [String] -> [String] -> [FilePath]
+                            -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String] -> [String] -> [FilePath]
+                            -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+    , g InstalledPackageInfo @@ UnitId, g InstalledPackageInfo @@ Basic
+    , g InstalledPackageInfo @@ (Basic -> UnitId -> [(ModuleName, OpenModule)] -> String -> Either SPDX.License License -> ShortText
+                            -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText -> ShortText
+                            -> AbiHash -> Bool -> Bool -> [ExposedModule] -> [ModuleName] -> Bool -> [FilePath]
+                            -> [FilePath] -> [FilePath] -> FilePath -> [String] -> [String] -> [String] -> [FilePath]
+                            -> [String] -> [UnitId] -> [AbiDependency] -> [String] -> [String] -> [String] -> [FilePath]
+                            -> [String] -> [FilePath] -> [FilePath] -> Maybe FilePath -> InstalledPackageInfo)
+
+    
+#endif
+
+    )
     => g InstalledPackageInfo InstalledPackageInfo
 ipiFieldGrammar = mkInstalledPackageInfo
     -- Deprecated fields
@@ -112,10 +599,17 @@ ipiFieldGrammar = mkInstalledPackageInfo
         _basicLibVisibility
       where
         MungedPackageName pn ln = _basicName
+
+#if MIN_VERSION_base(4,14,0)
 {-# SPECIALIZE ipiFieldGrammar :: FieldDescrs InstalledPackageInfo InstalledPackageInfo #-}
+#else
+{-# SPECIALIZE ipiFieldGrammar :: FieldDescrs InstalledPackageInfo InstalledPackageInfo #-}
+#endif
 {-# SPECIALIZE ipiFieldGrammar :: ParsecFieldGrammar InstalledPackageInfo InstalledPackageInfo #-}
 {-# SPECIALIZE ipiFieldGrammar :: PrettyFieldGrammar InstalledPackageInfo InstalledPackageInfo #-}
-
+-- #if MIN_VERSION_base(4,14,0)
+-- instance Total (FieldDescrs Basic)
+-- #endif
 -- (forall b. [b]) ~ ()
 unitedList :: Lens' a [b]
 unitedList f s = s <$ f []
@@ -270,7 +764,22 @@ basicLibVisibility f b = (\x -> b { _basicLibVisibility = x }) <$>
 {-# INLINE basicLibVisibility #-}
 
 basicFieldGrammar
-    :: (FieldGrammar g, Applicative (g Basic))
+    :: (FieldGrammar g, Applicative (g Basic)
+#if MIN_VERSION_base(4,14,0)
+       , Total (g Basic)
+       , g Basic @@ (LibraryVisibility -> Basic), g Basic @@ LibraryVisibility
+       , g Basic @@ (Maybe UnqualComponentName -> LibraryVisibility -> Basic)
+       , g Basic @@ Maybe UnqualComponentName
+       , g Basic @@ (Maybe PackageName -> Maybe UnqualComponentName -> LibraryVisibility -> Basic)
+       , g Basic @@ Maybe PackageName
+       , g Basic @@ (Version -> Maybe PackageName
+                             -> Maybe UnqualComponentName
+                             -> LibraryVisibility
+                             -> Basic)
+       , g Basic @@ Version
+       , g Basic @@ MungedPackageName
+#endif
+       )
     => g Basic Basic
 basicFieldGrammar = mkBasic
     <$> optionalFieldDefAla "name"          MQuoted  basicName (mungedPackageName emptyInstalledPackageInfo)
@@ -279,6 +788,12 @@ basicFieldGrammar = mkBasic
     <*> optionalField       "lib-name"               basicLibName
     <+> optionalFieldDef    "visibility"             basicLibVisibility LibraryVisibilityPrivate
   where
+    mkBasic :: MungedPackageName
+                      -> Version
+                      -> Maybe PackageName
+                      -> Maybe UnqualComponentName
+                      -> LibraryVisibility
+                      -> Basic
     mkBasic n v pn ln lv = Basic n v pn ln' lv'
       where
         ln' = maybe LMainLibName LSubLibName ln
