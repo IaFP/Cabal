@@ -35,7 +35,7 @@ import Distribution.System (Arch, OS)
 import Distribution.Compiler (CompilerFlavor)
 import Distribution.Version (VersionRange)
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (Total, type (@@))
+import GHC.Types (Total)
 #endif
 
 -------------------------------------------------------------------------------

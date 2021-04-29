@@ -247,7 +247,7 @@ import qualified GHC.IO.Exception as GHC
 import qualified Text.PrettyPrint as Disp
 
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (type (@@), Total)
+import GHC.Types (type (@@))
 #endif
 
 -- We only get our own version number when we're building with ourselves
