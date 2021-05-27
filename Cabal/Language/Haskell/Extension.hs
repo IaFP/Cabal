@@ -730,6 +730,10 @@ data KnownExtension =
   -- * <https://www.haskell.org/ghc/docs/latest/html/users_guide/glasgow_exts.html#ghc-flag--XPartialTypeSignatures>
   | PartialTypeSignatures
 
+  -- | Allow Partial or restricted types
+  --
+  | PartialTypeConstructors
+
   -- | Allow named placeholders written with a leading underscore inside type
   -- signatures.  Wildcards with the same name unify to the same type.
   --

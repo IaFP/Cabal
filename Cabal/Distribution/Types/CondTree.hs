@@ -34,7 +34,7 @@ import Distribution.Types.Condition
 
 import qualified Distribution.Compat.Lens as L
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (Total, type (@@))
+import GHC.Types (type (@@))
 #endif
 
 

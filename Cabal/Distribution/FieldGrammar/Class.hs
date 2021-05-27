@@ -24,7 +24,7 @@ import Distribution.Parsec           (Parsec)
 import Distribution.Pretty           (Pretty)
 import Distribution.Utils.ShortText
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (Total, type (@@))
+import GHC.Types (type (@@))
 #endif
 
 -- | 'FieldGrammar' is parametrised by

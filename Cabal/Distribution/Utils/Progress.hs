@@ -18,7 +18,7 @@ import Distribution.Compat.Prelude
 
 import qualified Data.Monoid as Mon
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (type (@@), Total)
+import GHC.Types (Total)
 #endif
 
 

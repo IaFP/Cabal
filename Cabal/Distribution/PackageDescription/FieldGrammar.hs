@@ -69,7 +69,7 @@ import qualified Distribution.SPDX as SPDX
 
 import qualified Distribution.Types.Lens as L
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (type (@@), Total)
+import GHC.Types (type (@@))
 import Distribution.Types.Mixin (Mixin)
 import Language.Haskell.Extension (Extension, Language)
 import Distribution.Types.PkgconfigDependency (PkgconfigDependency)
@@ -565,8 +565,8 @@ libraryFieldGrammar n = Library n
             optionalFieldDef "visibility" L.libVisibility LibraryVisibilityPrivate
             ^^^ availableSince CabalSpecV3_0 LibraryVisibilityPrivate
 
-{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> ParsecFieldGrammar' Library #-}
-{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> PrettyFieldGrammar' Library #-}
+--{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> ParsecFieldGrammar' Library #-}
+--{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> PrettyFieldGrammar' Library #-}
 
 -------------------------------------------------------------------------------
 -- Foreign library
@@ -832,8 +832,8 @@ foreignLibFieldGrammar n = ForeignLib n
     <*> optionalField    "lib-version-info"                             L.foreignLibVersionInfo
     <*> optionalField    "lib-version-linux"                            L.foreignLibVersionLinux
     <*> monoidalFieldAla "mod-def-file"      (alaList' FSep FilePathNT) L.foreignLibModDefFile
-{-# SPECIALIZE foreignLibFieldGrammar :: UnqualComponentName -> ParsecFieldGrammar' ForeignLib #-}
-{-# SPECIALIZE foreignLibFieldGrammar :: UnqualComponentName -> PrettyFieldGrammar' ForeignLib #-}
+-- {-# SPECIALIZE foreignLibFieldGrammar :: UnqualComponentName -> ParsecFieldGrammar' ForeignLib #-}
+-- {-# SPECIALIZE foreignLibFieldGrammar :: UnqualComponentName -> PrettyFieldGrammar' ForeignLib #-}
 
 -------------------------------------------------------------------------------
 -- Executable
@@ -1093,8 +1093,8 @@ executableFieldGrammar n = Executable n
     <*> optionalFieldDef    "scope"              L.exeScope ExecutablePublic
         ^^^ availableSince CabalSpecV2_0 ExecutablePublic
     <*> blurFieldGrammar L.buildInfo buildInfoFieldGrammar
-{-# SPECIALIZE executableFieldGrammar :: UnqualComponentName -> ParsecFieldGrammar' Executable #-}
-{-# SPECIALIZE executableFieldGrammar :: UnqualComponentName -> PrettyFieldGrammar' Executable #-}
+-- {-# SPECIALIZE executableFieldGrammar :: UnqualComponentName -> ParsecFieldGrammar' Executable #-}
+-- {-# SPECIALIZE executableFieldGrammar :: UnqualComponentName -> PrettyFieldGrammar' Executable #-}
 
 -------------------------------------------------------------------------------
 -- TestSuite
@@ -2093,8 +2093,8 @@ buildInfoFieldGrammar = BuildInfo
     <*> monoidalFieldAla "build-depends"        (alaList  CommaVCat)          L.targetBuildDepends
     <*> monoidalFieldAla "mixins"               (alaList  CommaVCat)          L.mixins
         ^^^ availableSince CabalSpecV2_0 []
-{-# SPECIALIZE buildInfoFieldGrammar :: ParsecFieldGrammar' BuildInfo #-}
-{-# SPECIALIZE buildInfoFieldGrammar :: PrettyFieldGrammar' BuildInfo #-}
+-- {-# SPECIALIZE buildInfoFieldGrammar :: ParsecFieldGrammar' BuildInfo #-}
+-- {-# SPECIALIZE buildInfoFieldGrammar :: PrettyFieldGrammar' BuildInfo #-}
 
 hsSourceDirsGrammar
     :: (FieldGrammar g, Applicative (g BuildInfo)
@@ -2190,8 +2190,8 @@ flagFieldGrammar name = MkFlag name
     <$> freeTextFieldDef    "description"          L.flagDescription
     <*> booleanFieldDef     "default"              L.flagDefault     True
     <*> booleanFieldDef     "manual"               L.flagManual      False
-{-# SPECIALIZE flagFieldGrammar :: FlagName -> ParsecFieldGrammar' Flag #-}
-{-# SPECIALIZE flagFieldGrammar :: FlagName -> PrettyFieldGrammar' Flag #-}
+-- {-# SPECIALIZE flagFieldGrammar :: FlagName -> ParsecFieldGrammar' Flag #-}
+-- {-# SPECIALIZE flagFieldGrammar :: FlagName -> PrettyFieldGrammar' Flag #-}
 
 -------------------------------------------------------------------------------
 -- SourceRepo
@@ -2218,8 +2218,8 @@ sourceRepoFieldGrammar kind = SourceRepo kind
     <*> optionalFieldAla "branch"   Token      L.repoBranch
     <*> optionalFieldAla "tag"      Token      L.repoTag
     <*> optionalFieldAla "subdir"   FilePathNT L.repoSubdir
-{-# SPECIALIZE sourceRepoFieldGrammar :: RepoKind -> ParsecFieldGrammar' SourceRepo #-}
-{-# SPECIALIZE sourceRepoFieldGrammar :: RepoKind ->PrettyFieldGrammar' SourceRepo #-}
+-- {-# SPECIALIZE sourceRepoFieldGrammar :: RepoKind -> ParsecFieldGrammar' SourceRepo #-}
+-- {-# SPECIALIZE sourceRepoFieldGrammar :: RepoKind ->PrettyFieldGrammar' SourceRepo #-}
 
 -------------------------------------------------------------------------------
 -- SetupBuildInfo
@@ -2235,5 +2235,5 @@ setupBInfoFieldGrammar
 setupBInfoFieldGrammar def = flip SetupBuildInfo def
     <$> monoidalFieldAla "setup-depends" (alaList CommaVCat) L.setupDepends
     
-{-# SPECIALIZE setupBInfoFieldGrammar :: Bool -> ParsecFieldGrammar' SetupBuildInfo #-}
-{-# SPECIALIZE setupBInfoFieldGrammar :: Bool ->PrettyFieldGrammar' SetupBuildInfo #-}
+-- {-# SPECIALIZE setupBInfoFieldGrammar :: Bool -> ParsecFieldGrammar' SetupBuildInfo #-}
+-- {-# SPECIALIZE setupBInfoFieldGrammar :: Bool ->PrettyFieldGrammar' SetupBuildInfo #-}

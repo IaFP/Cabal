@@ -36,7 +36,7 @@ import qualified Distribution.Fields.Parser as P
 import qualified Data.ByteString  as BS
 import qualified Text.PrettyPrint as PP
 #if MIN_VERSION_base(4,14,0)
-import GHC.Types (type (@@))
+import GHC.Types (Total)
 #endif
 
 data PrettyField ann
