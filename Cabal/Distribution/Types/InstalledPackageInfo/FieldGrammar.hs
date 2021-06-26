@@ -18,7 +18,7 @@ import Distribution.CabalSpecVersion
 import Distribution.Compat.Lens               (Lens', (&), (.~))
 import Distribution.Compat.Newtype
 import Distribution.FieldGrammar
-import Distribution.FieldGrammar.FieldDescrs
+-- import Distribution.FieldGrammar.FieldDescrs
 import Distribution.License
 import Distribution.ModuleName
 import Distribution.Package
