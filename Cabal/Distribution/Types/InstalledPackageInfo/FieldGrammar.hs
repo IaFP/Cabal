@@ -600,13 +600,15 @@ ipiFieldGrammar = mkInstalledPackageInfo
       where
         MungedPackageName pn ln = _basicName
 
-#if MIN_VERSION_base(4,14,0)
-{-# SPECIALIZE ipiFieldGrammar :: FieldDescrs InstalledPackageInfo InstalledPackageInfo #-}
-#else
-{-# SPECIALIZE ipiFieldGrammar :: FieldDescrs InstalledPackageInfo InstalledPackageInfo #-}
-#endif
-{-# SPECIALIZE ipiFieldGrammar :: ParsecFieldGrammar InstalledPackageInfo InstalledPackageInfo #-}
-{-# SPECIALIZE ipiFieldGrammar :: PrettyFieldGrammar InstalledPackageInfo InstalledPackageInfo #-}
+-- TODO FIX SPECIALIZE
+-- #if MIN_VERSION_base(4,14,0)
+-- {-# SPECIALIZE ipiFieldGrammar :: FieldDescrs InstalledPackageInfo InstalledPackageInfo #-}
+-- #else
+-- {-# SPECIALIZE ipiFieldGrammar :: FieldDescrs InstalledPackageInfo InstalledPackageInfo #-}
+-- #endif
+-- {-# SPECIALIZE ipiFieldGrammar :: ParsecFieldGrammar InstalledPackageInfo InstalledPackageInfo #-}
+-- {-# SPECIALIZE ipiFieldGrammar :: PrettyFieldGrammar InstalledPackageInfo InstalledPackageInfo #-}
+
 -- #if MIN_VERSION_base(4,14,0)
 -- instance Total (FieldDescrs Basic)
 -- #endif
