@@ -69,11 +69,11 @@ data CondTree v c a = CondNode
     , condTreeComponents  :: [CondBranch v c a]
     }
     deriving (Show, Eq, Typeable, Data, Generic, Functor, Foldable, Traversable)
-#if MIN_VERSION_base(4,14,0)
-type instance CondTree @@ v = ()
-type instance CondTree v @@ c = ()
-type instance CondTree v c @@ a = ()
-#endif
+-- #if MIN_VERSION_base(4,14,0)
+-- type instance CondTree @@ v = ()
+-- type instance CondTree v @@ c = ()
+-- type instance CondTree v c @@ a = ()
+-- #endif
 
 instance (Binary v, Binary c, Binary a) => Binary (CondTree v c a)
 instance (Structured v, Structured c, Structured a) => Structured (CondTree v c a)
@@ -89,11 +89,11 @@ data CondBranch v c a = CondBranch
     , condBranchIfFalse   :: Maybe (CondTree v c a)
     }
     deriving (Show, Eq, Typeable, Data, Generic, Functor, Traversable)
-#if MIN_VERSION_base(4,14,0)
-type instance CondBranch @@ v = Condition @@ v
-type instance CondBranch v @@ c = ()
-type instance CondBranch v c @@ a = CondTree v c @@ a
-#endif
+-- #if MIN_VERSION_base(4,14,0)
+-- type instance CondBranch @@ v = Condition @@ v
+-- type instance CondBranch v @@ c = ()
+-- type instance CondBranch v c @@ a = CondTree v c @@ a
+-- #endif
 
 -- This instance is written by hand because GHC 8.0.1/8.0.2 infinite
 -- loops when trying to derive it with optimizations.  See

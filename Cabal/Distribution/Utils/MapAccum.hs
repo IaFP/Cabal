@@ -12,7 +12,7 @@ import GHC.Types (Total, type (@@))
 #endif
 
 -- Like StateT but with return tuple swapped
-newtype StateM s m a = StateM { runStateM :: s -> m (s, a) }
+data StateM s m a = StateM { runStateM :: s -> m (s, a) }
 #if MIN_VERSION_base(4,14,0)
 instance Total (StateM s m)
 #endif

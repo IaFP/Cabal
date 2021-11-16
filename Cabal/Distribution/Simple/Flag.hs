@@ -35,6 +35,9 @@ module Distribution.Simple.Flag (
 import Prelude ()
 import Distribution.Compat.Prelude hiding (get)
 import Distribution.Compat.Stack
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- ------------------------------------------------------------
 -- * Flag type
@@ -58,6 +61,10 @@ import Distribution.Compat.Stack
 -- 'NoFlag' and later flags override earlier ones.
 --
 data Flag a = Flag a | NoFlag deriving (Eq, Generic, Show, Read, Typeable)
+
+#if MIN_VERSION_base(4,14,0)
+instance Total (Flag)
+#endif
 
 instance Binary a => Binary (Flag a)
 instance Structured a => Structured (Flag a)

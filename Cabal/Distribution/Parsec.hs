@@ -4,7 +4,7 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 #if __GLASGOW_HASKELL__ >= 810
-{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures #-}
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures, UndecidableSuperClasses #-}
 #endif
 module Distribution.Parsec (
     Parsec(..),

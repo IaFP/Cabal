@@ -15,6 +15,9 @@ module Distribution.Types.Condition (
 
 import Prelude ()
 import Distribution.Compat.Prelude
+#if MIN_VERSION_base(4,14,0)
+import GHC.Types (Total)
+#endif
 
 -- | A boolean expression parameterized over the variable type used.
 data Condition c = Var c
@@ -23,6 +26,9 @@ data Condition c = Var c
                  | COr (Condition c) (Condition c)
                  | CAnd (Condition c) (Condition c)
     deriving (Show, Eq, Typeable, Data, Generic)
+#if MIN_VERSION_base(4,14,0)
+instance Total (Condition)
+#endif
 
 -- | Boolean negation of a 'Condition' value.
 cNot :: Condition a -> Condition a

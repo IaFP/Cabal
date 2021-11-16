@@ -67,29 +67,15 @@ import GHC.Types (Total, type (@@))
 -- Types
 -------------------------------------------------------------------------------
 
-type LensLike  f s t a b =
-#if MIN_VERSION_base(4,14,0)
-                            -- (f @@ b, f @@ t) =>
-                            (Total f) => 
-#endif
-                            (a -> f b) -> s -> f t
-type LensLike' f s   a   =
-#if MIN_VERSION_base(4,14,0)
-                            -- (f @@ a, f @@ s) =>
-                            (Total f) => 
-#endif
+type LensLike  f s t a b = (a -> f b) -> s -> f t
+type LensLike' f s   a   = (a -> f a) -> s -> f s
 
-                            (a -> f a) -> s -> f s
-
-type Lens      s t a b = forall f. (Functor f
+type Lens      s t a b = forall f. Functor f => LensLike f s t a b
+type Traversal s t a b = forall f. ( Applicative f
 #if MIN_VERSION_base(4,14,0)
                                    , Total f
 #endif
-                                   ) => LensLike f s t a b
-type Traversal s t a b = forall f. (Applicative f
-#if MIN_VERSION_base(4,14,0)
-                                   , Total f
-#endif
+
                                    ) => LensLike f s t a b
 
 type Lens'      s a = Lens s s a a
@@ -256,7 +242,7 @@ cloneLens l f s = runPretext (l pretextSell s) f
 -------------------------------------------------------------------------------
 
 -- | @lens@ variant is also parametrised by profunctor.
-newtype Pretext a b t = Pretext { runPretext :: forall f. (Functor f
+data Pretext a b t = Pretext { runPretext :: forall f. (Functor f
 #if MIN_VERSION_base(4,14,0)
                                                        , Total f
 #endif

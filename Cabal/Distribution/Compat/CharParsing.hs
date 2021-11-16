@@ -4,7 +4,7 @@
 {-# OPTIONS_GHC -fspec-constr -fspec-constr-count=8 #-}
 {-# LANGUAGE CPP #-}
 #if __GLASGOW_HASKELL__ >= 810
-{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures, UndecidableInstances #-}
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, ConstrainedClassMethods, DefaultSignatures, UndecidableInstances, UndecidableSuperClasses #-}
 #endif
 
 -----------------------------------------------------------------------------

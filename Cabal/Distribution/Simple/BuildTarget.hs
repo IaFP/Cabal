@@ -834,6 +834,9 @@ data Match a = NoMatch      Confidence [MatchError]
              | ExactMatch   Confidence [a]
              | InexactMatch Confidence [a]
   deriving Show
+#if MIN_VERSION_base(4,14,0)
+instance Total Match
+#endif
 
 type Confidence = Int
 
