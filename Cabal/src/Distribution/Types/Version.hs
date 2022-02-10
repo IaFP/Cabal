@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 module Distribution.Types.Version (
@@ -26,6 +30,9 @@ import qualified Data.Version                    as Base
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint                as Disp
 import qualified Text.Read                       as Read
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type (@))
+#endif
 
 -- | A 'Version' represents the version of a software entity.
 --
@@ -104,10 +111,18 @@ instance Parsec Version where
 -- | An integral without leading zeroes.
 --
 -- @since 3.0
-versionDigitParser :: CabalParsing m => m Int
+versionDigitParser :: (
+#if MIN_VERSION_base(4,16,0)
+                       m @ ([Int] -> [Int]), m @ [Int], m @ Char,
+#endif 
+                       CabalParsing m) => m Int
 versionDigitParser = (some d >>= toNumber) P.<?> "version digit (integral without leading zeroes)"
   where
-    toNumber :: CabalParsing m => [Int] -> m Int
+    toNumber :: (
+#if MIN_VERSION_base(4,16,0)
+                 m @ Char,
+#endif 
+      CabalParsing m) => [Int] -> m Int
     toNumber [0]   = return 0
     toNumber (0:_) = P.unexpected "Version digit with leading zero"
     toNumber xs
@@ -118,7 +133,11 @@ versionDigitParser = (some d >>= toNumber) P.<?> "version digit (integral withou
         | length xs > 9 = P.unexpected "At most 9 numbers are allowed per version number part"
         | otherwise     = return $ foldl' (\a b -> a * 10 + b) 0 xs
 
-    d :: P.CharParsing m => m Int
+    d :: (
+#if MIN_VERSION_base(4,16,0)
+                 m @ Char,
+#endif 
+                 P.CharParsing m) => m Int
     d = f <$> P.satisfyRange '0' '9'
     f c = ord c - ord '0'
 

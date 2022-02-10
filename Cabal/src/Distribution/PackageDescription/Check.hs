@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.PackageDescription.Check
@@ -75,6 +79,9 @@ import qualified Distribution.Utils.ShortText as ShortText
 import qualified Distribution.Types.BuildInfo.Lens                 as L
 import qualified Distribution.Types.GenericPackageDescription.Lens as L
 import qualified Distribution.Types.PackageDescription.Lens        as L
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total, type (@))
+#endif
 
 -- $setup
 -- >>> import Control.Arrow ((&&&))
@@ -1738,7 +1745,11 @@ data CheckPackageContentOps m = CheckPackageContentOps {
 -- The point of this extra generality is to allow doing checks in some virtual
 -- file system, for example a tarball in memory.
 --
-checkPackageContent :: (Monad m, Applicative m)
+checkPackageContent :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m, Applicative m)
                     => CheckPackageContentOps m
                     -> PackageDescription
                     -> m [PackageCheck]
@@ -1756,7 +1767,11 @@ checkPackageContent ops pkg = do
         ++ localPathErrors
         ++ vcsLocation
 
-checkCabalFileBOM :: Monad m => CheckPackageContentOps m
+checkCabalFileBOM :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m) => CheckPackageContentOps m
                   -> m (Maybe PackageCheck)
 checkCabalFileBOM ops = do
   epdfile <- findPackageDesc ops
@@ -1778,7 +1793,11 @@ checkCabalFileBOM ops = do
     bomUtf8 :: BS.ByteString
     bomUtf8 = BS.pack [0xef,0xbb,0xbf] -- U+FEFF encoded as UTF8
 
-checkCabalFileName :: Monad m => CheckPackageContentOps m
+checkCabalFileName :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m) => CheckPackageContentOps m
                  -> PackageDescription
                  -> m (Maybe PackageCheck)
 checkCabalFileName ops pkg = do
@@ -1802,7 +1821,11 @@ checkCabalFileName ops pkg = do
 -- |Find a package description file in the given directory.  Looks for
 -- @.cabal@ files.  Like 'Distribution.Simple.Utils.findPackageDesc',
 -- but generalized over monads.
-findPackageDesc :: Monad m => CheckPackageContentOps m
+findPackageDesc :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m) => CheckPackageContentOps m
                  -> m (Either PackageCheck FilePath) -- ^<pkgname>.cabal
 findPackageDesc ops
  = do let dir = "."
@@ -1830,7 +1853,11 @@ findPackageDesc ops
                   ++ "Please use only one of: "
                   ++ intercalate ", " l
 
-checkLicensesExist :: (Monad m, Applicative m)
+checkLicensesExist :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m, Applicative m)
                    => CheckPackageContentOps m
                    -> PackageDescription
                    -> m [PackageCheck]
@@ -1845,7 +1872,11 @@ checkLicensesExist ops pkg = do
     fieldname | length (licenseFiles pkg) == 1 = "license-file"
               | otherwise                      = "license-files"
 
-checkSetupExists :: Monad m => CheckPackageContentOps m
+checkSetupExists :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m) => CheckPackageContentOps m
                  -> PackageDescription
                  -> m (Maybe PackageCheck)
 checkSetupExists ops pkg = do
@@ -1856,7 +1887,11 @@ checkSetupExists ops pkg = do
     PackageDistInexcusable $
       "The package is missing a Setup.hs or Setup.lhs script."
 
-checkConfigureExists :: Monad m => CheckPackageContentOps m
+checkConfigureExists :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m) => CheckPackageContentOps m
                      -> PackageDescription
                      -> m (Maybe PackageCheck)
 checkConfigureExists ops pd
@@ -1868,7 +1903,11 @@ checkConfigureExists ops pd
           ++ "You probably need to run 'autoreconf -i' to generate it."
   | otherwise = return Nothing
 
-checkLocalPathsExist :: Monad m => CheckPackageContentOps m
+checkLocalPathsExist :: (
+#if MIN_VERSION_base(4,16,0)
+    Total m,
+#endif
+  Monad m) => CheckPackageContentOps m
                      -> PackageDescription
                      -> m [PackageCheck]
 checkLocalPathsExist ops pkg = do
@@ -1889,7 +1928,11 @@ checkLocalPathsExist ops pkg = do
            }
          | (dir, kind) <- missing ]
 
-checkMissingVcsInfo :: (Monad m, Applicative m)
+checkMissingVcsInfo :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  Monad m, Applicative m)
                     => CheckPackageContentOps m
                     -> PackageDescription
                     -> m [PackageCheck]

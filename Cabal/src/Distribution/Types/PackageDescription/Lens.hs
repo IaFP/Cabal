@@ -1,3 +1,8 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+{-# OPTIONS -fno-enable-rewrite-rules #-}
+#endif
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 module Distribution.Types.PackageDescription.Lens (
@@ -5,7 +10,7 @@ module Distribution.Types.PackageDescription.Lens (
     module Distribution.Types.PackageDescription.Lens,
     ) where
 
-import Distribution.Compat.Lens
+import Distribution.Compat.Lens hiding (view)
 import Distribution.Compat.Prelude
 import Prelude ()
 
@@ -163,59 +168,71 @@ allLibraries f pd = mk <$> traverse f (T.library pd) <*> traverse f (T.subLibrar
   where
     mk l ls = pd { T.library = l, T.subLibraries = ls }
 
+view :: Getting a s a -> s ->  a
+view l s = getConst (l Const s)
+{-# INLINE view #-}
+
 -- | @since 2.4
 componentModules :: Monoid r => ComponentName -> Getting r PackageDescription [ModuleName]
 componentModules cname = case cname of
     CLibName    name ->
-      componentModules' name allLibraries             libName            explicitLibModules
+       allLibraries . filtered ((== name) . view libName) . getting explicitLibModules
+      -- componentModules' name allLibraries             libName            explicitLibModules
     CFLibName   name ->
-      componentModules' name (foreignLibs . traverse) foreignLibName     foreignLibModules
+      (foreignLibs . traverse) . filtered ((== name) . view foreignLibName) . getting foreignLibModules
+      -- componentModules' name (foreignLibs . traverse) foreignLibName     foreignLibModules
     CExeName    name ->
-      componentModules' name (executables . traverse) exeName            exeModules
+      (executables . traverse) . filtered ((== name) . view exeName) . getting exeModules
+      -- componentModules' name (executables . traverse) exeName            exeModules
     CTestName   name ->
-      componentModules' name (testSuites  . traverse) testName           testModules
+      (testSuites  . traverse) . filtered ((== name) . view testName) . getting testModules
+      -- componentModules' name (testSuites  . traverse) testName           testModules
     CBenchName  name ->
-      componentModules' name (benchmarks  . traverse) benchmarkName      benchmarkModules
-  where
-    componentModules'
-        :: (Eq name, Monoid r)
-        => name
-        -> Traversal' PackageDescription a
-        -> Lens' a name
-        -> (a -> [ModuleName])
-        -> Getting r PackageDescription [ModuleName]
-    componentModules' name pdL nameL modules =
-        pdL
-      . filtered ((== name) . view nameL)
-      . getting modules
+      (benchmarks  . traverse) . filtered ((== name) . view benchmarkName) . getting benchmarkModules
+      -- componentModules' name (benchmarks  . traverse) benchmarkName      benchmarkModules
+  where 
+    -- componentModules' :: (Eq name, Monoid r)
+    --     => name
+    --     -> Traversal' PackageDescription a
+    --     -> Lens' a name
+    --     -> (a -> [ModuleName])
+    --     -> Getting r PackageDescription [ModuleName]
+    -- componentModules' name pdL nameL modules =
+    --     pdL
+    --   . filtered ((== name) . view nameL)
+    --   . getting modules
 
-    filtered :: (a -> Bool) -> Traversal' a a
+    filtered :: (a -> Bool) ->  Traversal' a a
     filtered p f s = if p s then f s else pure s
 
 -- | @since 2.4
 componentBuildInfo :: ComponentName -> Traversal' PackageDescription BuildInfo
 componentBuildInfo cname = case cname of
     CLibName    name ->
-      componentBuildInfo' name allLibraries             libName            libBuildInfo
+      allLibraries . filtered ((== name) . view libName) . libBuildInfo
+       -- componentBuildInfo' name allLibraries             libName            libBuildInfo
     CFLibName   name ->
-      componentBuildInfo' name (foreignLibs . traverse) foreignLibName     foreignLibBuildInfo
+      (foreignLibs . traverse) . filtered ((== name) . view foreignLibName) . foreignLibBuildInfo
+      -- componentBuildInfo' name (foreignLibs . traverse) foreignLibName     foreignLibBuildInfo
     CExeName    name ->
-      componentBuildInfo' name (executables . traverse) exeName            exeBuildInfo
+      (executables . traverse) . filtered ((== name) . view exeName) . exeBuildInfo      
+      -- componentBuildInfo' name (executables . traverse) exeName            exeBuildInfo
     CTestName   name ->
-      componentBuildInfo' name (testSuites  . traverse) testName           testBuildInfo
+      (testSuites  . traverse) . filtered ((== name) . view testName) . testBuildInfo      
+      -- componentBuildInfo' name (testSuites  . traverse) testName           testBuildInfo
     CBenchName  name ->
-      componentBuildInfo' name (benchmarks  . traverse) benchmarkName      benchmarkBuildInfo
+      (benchmarks  . traverse) . filtered ((== name) . view benchmarkName) . benchmarkBuildInfo      
+      -- componentBuildInfo' name (benchmarks  . traverse) benchmarkName      benchmarkBuildInfo
   where
-    componentBuildInfo' :: Eq name
-                        => name
-                        -> Traversal' PackageDescription a
-                        -> Lens' a name
-                        -> Traversal' a BuildInfo
-                        -> Traversal' PackageDescription BuildInfo
-    componentBuildInfo' name pdL nameL biL =
-        pdL
-      . filtered ((== name) . view nameL)
-      . biL
-
+    -- componentBuildInfo' :: Eq name
+    --                     => name
+    --                     -> Traversal' PackageDescription a
+    --                     -> Lens' a name
+    --                     -> Traversal' a BuildInfo
+    --                     -> Traversal' PackageDescription BuildInfo
+    -- componentBuildInfo' name pdL nameL biL =
+    --     pdL
+    --   . filtered ((== name) . view nameL)
+    --   . biL
     filtered :: (a -> Bool) -> Traversal' a a
     filtered p f s = if p s then f s else pure s

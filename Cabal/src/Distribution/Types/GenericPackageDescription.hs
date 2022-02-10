@@ -3,6 +3,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 
 module Distribution.Types.GenericPackageDescription (
     GenericPackageDescription(..),
@@ -30,6 +34,9 @@ import Distribution.Types.TestSuite
 import Distribution.Types.UnqualComponentName
 import Distribution.Package
 import Distribution.Version
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 
 -- ---------------------------------------------------------------------------
 -- The 'GenericPackageDescription' type
@@ -90,7 +97,11 @@ instance L.HasBuildInfos GenericPackageDescription where
 
 -- We use this traversal to keep [Dependency] field in CondTree up to date.
 traverseCondTreeBuildInfo
-    :: forall f comp v. (Applicative f, L.HasBuildInfo comp)
+    :: forall f comp v. (
+#if MIN_VERSION_base(4,16,0)
+       Total f,
+#endif
+      Applicative f, L.HasBuildInfo comp)
     => LensLike' f (CondTree v [Dependency] comp) L.BuildInfo
 traverseCondTreeBuildInfo g = node where
     mkCondNode :: comp -> [CondBranch v [Dependency] comp] -> CondTree v [Dependency] comp

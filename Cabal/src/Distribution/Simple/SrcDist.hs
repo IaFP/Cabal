@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -69,6 +73,9 @@ import Data.Time (UTCTime, getCurrentTime, toGregorian, utctDay)
 import System.Directory ( doesFileExist )
 import System.IO (IOMode(WriteMode), hPutStrLn, withFile)
 import System.FilePath ((</>), (<.>), dropExtension, isRelative)
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 
 -- |Create a source distribution.
 sdist :: PackageDescription     -- ^ information from the tarball
@@ -255,6 +262,13 @@ listPackageSources' verbosity rip cwd pkg_descr pps =
   where
     -- We have to deal with all libs and executables, so we have local
     -- versions of these functions that ignore the 'buildable' attribute:
+#if MIN_VERSION_base(4,16,0)
+    withAllLib :: (Total f, Applicative f) => (Library -> f b) -> f [b]
+    withAllFLib :: (Total f, Applicative f) => (ForeignLib -> f b) -> f [b]
+    withAllExe :: (Total f, Applicative f) => (Executable -> f b) -> f [b]
+    withAllTest :: (Total f, Applicative f) => (TestSuite -> f b) -> f [b]               
+    withAllBenchmark :: (Total f, Applicative f) => (Benchmark -> f b) -> f [b]
+#endif
     withAllLib       action = traverse action (allLibraries pkg_descr)
     withAllFLib      action = traverse action (foreignLibs pkg_descr)
     withAllExe       action = traverse action (executables pkg_descr)

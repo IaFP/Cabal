@@ -1,6 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE RankNTypes         #-}
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators, ScopedTypeVariables #-}
+#endif
 
 module Distribution.Types.ModuleRenaming (
     ModuleRenaming(..),
@@ -21,6 +25,9 @@ import qualified Data.Map                   as Map
 import qualified Data.Set                   as Set
 import qualified Distribution.Compat.CharParsing as P
 import           Text.PrettyPrint           (hsep, parens, punctuate, text, comma)
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type (@), Total)
+#endif
 
 -- | Renaming applied to the modules provided by a package.
 -- The boolean indicates whether or not to also include all of the
@@ -85,6 +92,21 @@ instance Pretty ModuleRenaming where
             | orig == new = pretty orig
             | otherwise = pretty orig <+> text "as" <+> pretty new
 
+parensStrict :: (
+#if MIN_VERSION_base(4,16,0)
+        forall x. m @ x,
+#endif
+        Monad m, P.CharParsing m, MonadFail m, Alternative m) => m a -> m a
+parensStrict p = P.between (P.char '(' >> warnSpaces) (P.char ')') p
+
+warnSpaces :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+   Monad m, P.CharParsing m, MonadFail m, Alternative m) => m (Maybe a)
+warnSpaces = P.optional $
+            P.space *> fail "space after parenthesis, use cabal-version: 3.0 or higher"
+
 instance Parsec ModuleRenaming where
     parsec = do
         csv <- askCabalSpecVersion
@@ -97,13 +119,13 @@ instance Parsec ModuleRenaming where
         -- parser checks the cabal file version and does the correct
         -- skipping of spaces.
         parensLax    p = P.between (P.char '(' >> P.spaces)   (P.char ')' >> P.spaces)   p
-        parensStrict p = P.between (P.char '(' >> warnSpaces) (P.char ')') p
-
-        warnSpaces = P.optional $
-            P.space *> fail "space after parenthesis, use cabal-version: 3.0 or higher"
 
 moduleRenamingParsec
-    :: CabalParsing m
+    :: (
+#if MIN_VERSION_base(4,16,0)
+       Total m,
+#endif
+      CabalParsing m)
     => (forall a. m a -> m a)  -- ^ between parens
     -> m ModuleName            -- ^ module name parser
     -> m ModuleRenaming

@@ -3,6 +3,9 @@
 {-# LANGUAGE RankNTypes       #-}
 {-# LANGUAGE Trustworthy      #-}
 {-# LANGUAGE TypeOperators    #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 
 #ifdef MIN_VERSION_base
 #define MINVER_base_411 MIN_VERSION_base(4,11,0)
@@ -210,7 +213,9 @@ import Distribution.Compat.NonEmptySet (NonEmptySet)
 import Distribution.Utils.Structured   (Structured)
 
 import qualified Debug.Trace
-
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type (@), Total)
+#endif
 -- | New name for 'Text.PrettyPrint.<>'
 (<<>>) :: Disp.Doc -> Disp.Doc -> Disp.Doc
 (<<>>) = (Disp.<>)
@@ -241,7 +246,11 @@ length = foldl' (\c _ -> c+1) 0
 --
 -- The implementation has been taken from @deepseq-1.4.2@'s default
 -- 'rnf' implementation.
-genericRnf :: (Generic a, GNFData (Rep a)) => a -> ()
+genericRnf :: (
+#if MIN_VERSION_base(4,16,0)
+        forall x. (Rep a) @ x,
+#endif    
+  Generic a, GNFData (Rep a)) => a -> ()
 genericRnf = grnf . from
 
 -- | Hidden internal type-class
@@ -258,15 +267,27 @@ instance NFData a => GNFData (K1 i a) where
   grnf = rnf . unK1
   {-# INLINEABLE grnf #-}
 
-instance GNFData a => GNFData (M1 i c a) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+        Total a,
+#endif
+    GNFData a) => GNFData (M1 i c a) where
   grnf = grnf . unM1
   {-# INLINEABLE grnf #-}
 
-instance (GNFData a, GNFData b) => GNFData (a :*: b) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+        Total a, Total b,
+#endif  
+  GNFData a, GNFData b) => GNFData (a :*: b) where
   grnf (x :*: y) = grnf x `seq` grnf y
   {-# INLINEABLE grnf #-}
 
-instance (GNFData a, GNFData b) => GNFData (a :+: b) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+        Total a, Total b,
+#endif 
+  GNFData a, GNFData b) => GNFData (a :+: b) where
   grnf (L1 x) = grnf x
   grnf (R1 x) = grnf x
   {-# INLINEABLE grnf #-}

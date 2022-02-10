@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 -- -fno-warn-deprecations for use of Map.foldWithKey
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
 -----------------------------------------------------------------------------
@@ -62,7 +66,9 @@ import           Distribution.Version
 
 import qualified Data.Map.Lazy as Map
 import           Data.Tree     (Tree (Node))
-
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 ------------------------------------------------------------------------------
 
 -- | Simplify a configuration condition using the OS and arch names.  Returns
@@ -103,7 +109,11 @@ simplifyWithSysParams os arch cinfo cond = (cond', flags)
 --
 
 -- | Parse a configuration condition from a string.
-parseCondition :: CabalParsing m => m (Condition ConfVar)
+parseCondition :: (
+#if MIN_VERSION_base(4,16,0)
+  Total m,
+#endif
+  CabalParsing m) => m (Condition ConfVar)
 parseCondition = condOr
   where
     condOr   = sepByNonEmpty condAnd (oper "||") >>= return . foldl1 COr
@@ -111,7 +121,7 @@ parseCondition = condOr
     -- TODO: try?
     cond     = sp >> (boolLiteral <|> inparens condOr <|> notCond <|> osCond
                       <|> archCond <|> flagCond <|> implCond )
-    inparens   = between (P.char '(' >> sp) (sp >> P.char ')' >> sp)
+    -- inparens   = between (P.char '(' >> sp) (sp >> P.char ')' >> sp)
     notCond  = P.char '!' >> sp >> cond >>= return . CNot
     osCond   = string "os" >> sp >> inparens osIdent >>= return . Var
     archCond = string "arch" >> sp >> inparens archIdent >>= return . Var
@@ -127,6 +137,15 @@ parseCondition = condOr
     implIdent     = do i <- parsec
                        vr <- sp >> option anyVersion parsec
                        return $ Impl i vr
+
+inparens  :: (Applicative m, CabalParsing m
+#if MIN_VERSION_base(4,16,0)
+            , Total m
+#endif
+             ) => m a -> m a
+inparens  = between (P.char '(' >> sp) (sp >> P.char ')' >> sp)
+  where
+     sp  = spaces 
 
 ------------------------------------------------------------------------------
 

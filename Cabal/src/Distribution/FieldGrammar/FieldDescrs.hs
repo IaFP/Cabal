@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -14,7 +18,7 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Data.List                   (dropWhileEnd)
-import Distribution.Compat.Lens    (aview, cloneLens)
+import Distribution.Compat.Lens    (pretextPos, runPretext, pretextSell, ALens, LensLike)
 import Distribution.Compat.Newtype
 import Distribution.FieldGrammar
 import Distribution.Pretty         (Pretty (..), showFreeText)
@@ -24,6 +28,21 @@ import qualified Distribution.Compat.CharParsing as C
 import qualified Distribution.Fields.Field       as P
 import qualified Distribution.Parsec             as P
 import qualified Text.PrettyPrint                as Disp
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)  
+#endif
+
+cloneLens :: (
+#if MIN_VERSION_base(4,16,0)
+        Total f,
+#endif
+        Functor f) => ALens s t a b -> LensLike f s t a b
+cloneLens l f s = runPretext (l pretextSell s) f
+{-# NOINLINE cloneLens #-}
+
+aview :: ALens s t a b -> s -> a
+aview l = pretextPos  . l pretextSell
+{-# NOINLINE aview #-}
 
 -- strict pair
 data SP s = SP

@@ -8,6 +8,10 @@
 #else
 {-# LANGUAGE UndecidableInstances #-}
 #endif
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE ExplicitNamespaces, TypeOperators #-}
+#endif
 module Distribution.FieldGrammar.Class (
     FieldGrammar (..),
     uniqueField,
@@ -26,7 +30,9 @@ import Distribution.Compat.Newtype        (Newtype)
 import Distribution.FieldGrammar.Newtypes
 import Distribution.Fields.Field
 import Distribution.Utils.ShortText
-
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type (@))
+#endif
 -- | 'FieldGrammar' is parametrised by
 --
 -- * @s@ which is a structure we are parsing. We need this to provide prettyprinter
@@ -194,7 +200,11 @@ monoidalField fn l = monoidalFieldAla fn Identity l
 
 -- | Default implementation for 'freeTextFieldDefST'.
 defaultFreeTextFieldDefST
-    :: (Functor (g s), FieldGrammar c g)
+    :: (
+#if MIN_VERSION_base(4,16,0)
+       g s @ String,
+#endif
+       Functor (g s), FieldGrammar c g)
     => FieldName
     -> ALens' s ShortText -- ^ lens into the field
     -> g s ShortText

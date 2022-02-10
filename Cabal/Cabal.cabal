@@ -48,6 +48,9 @@ library
     process    >= 1.1.0.2  && < 1.7,
     time       >= 1.4.0.1  && < 1.12
 
+  if impl(ghc>=9.3)
+    build-depends: ghc-prim
+     
   if flag(bundled-binary-generic)
     build-depends: binary >= 0.5.1.1 && < 0.7
   else

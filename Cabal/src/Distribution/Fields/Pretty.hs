@@ -3,6 +3,10 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 -- | Cabal-like file AST types: 'Field', 'Section' etc,
 --
 -- This (intermediate) data type is used for pretty-printing.
@@ -32,6 +36,9 @@ import qualified Distribution.Fields.Parser as P
 
 import qualified Data.ByteString  as BS
 import qualified Text.PrettyPrint as PP
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total)
+#endif
 
 data PrettyField ann
     = PrettyField ann FieldName PP.Doc
@@ -146,7 +153,11 @@ renderField _ _ PrettyEmpty = Block NoMargin NoMargin mempty
 -------------------------------------------------------------------------------
 
 genericFromParsecFields
-    :: Applicative f
+    :: (
+#if MIN_VERSION_base(4,16,0)
+       Total f,
+#endif
+      Applicative f)
     => (FieldName -> [P.FieldLine ann] -> f PP.Doc)     -- ^ transform field contents
     -> (FieldName -> [P.SectionArg ann] -> f [PP.Doc])  -- ^ transform section arguments
     -> [P.Field ann]

@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints #-}
+#endif
 module Distribution.Types.BuildInfo.Lens (
     BuildInfo,
     HasBuildInfo (..),

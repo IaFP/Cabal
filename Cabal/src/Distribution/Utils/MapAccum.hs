@@ -1,11 +1,21 @@
 {-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
+
 module Distribution.Utils.MapAccum (mapAccumM) where
 
 import Distribution.Compat.Prelude
 import Prelude ()
-
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total, type(@))
+#endif  
 -- Like StateT but with return tuple swapped
-newtype StateM s m a = StateM { runStateM :: s -> m (s, a) }
+newtype
+#if MIN_VERSION_base(4,16,0)
+  m @ (s, a) =>
+#endif
+  StateM s m a = StateM { runStateM :: s -> m (s, a) }
 
 instance Functor m => Functor (StateM s m) where
     fmap f (StateM x) = StateM $ \s -> fmap (\(s', a) -> (s', f a)) (x s)
@@ -14,7 +24,11 @@ instance
 #if __GLASGOW_HASKELL__ < 709
     (Functor m, Monad m)
 #else
-    Monad m
+    (
+#if __GLASGOW_HASKELL__ >= 903
+     Total m, 
+#endif
+     Monad m)
 #endif
     => Applicative (StateM s m) where
     pure x = StateM $ \s -> return (s, x)
@@ -27,7 +41,11 @@ mapAccumM ::
 #if __GLASGOW_HASKELL__ < 709
     (Functor m, Monad m, Traversable t)
 #else
-    (Monad m, Traversable t)
+    (
+#if __GLASGOW_HASKELL__ >= 903
+     Total m, Total t,
+#endif
+     Monad m, Traversable t)
 #endif
           => (a -> b -> m (a, c)) -> a -> t b -> m (a, t c)
 mapAccumM f s t = runStateM (traverse (\x -> StateM (\s' -> f s' x)) t) s

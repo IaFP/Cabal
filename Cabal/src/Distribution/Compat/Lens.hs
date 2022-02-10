@@ -1,4 +1,8 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 -- | This module provides very basic lens functionality, without extra dependencies.
 --
 -- For the documentation of the combinators see <http://hackage.haskell.org/package/lens lens> package.
@@ -43,6 +47,7 @@ module Distribution.Compat.Lens (
     (#~), (#%~),
     -- * Internal Comonads
     Pretext (..),
+    pretextPos, pretextSell, pretextPeek, pretextPeeks
     -- * Cabal developer info
     -- $development
     ) where
@@ -54,7 +59,9 @@ import Control.Monad.State.Class (MonadState (..), gets, modify)
 
 import qualified Distribution.Compat.DList as DList
 import qualified Data.Set as Set
-
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (Total, type (@))
+#endif
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
@@ -62,8 +69,17 @@ import qualified Data.Set as Set
 type LensLike  f s t a b = (a -> f b) -> s -> f t
 type LensLike' f s   a   = (a -> f a) -> s -> f s
 
-type Lens      s t a b = forall f. Functor f     => LensLike f s t a b
-type Traversal s t a b = forall f. Applicative f => LensLike f s t a b
+type Lens      s t a b = forall f. (
+#if MIN_VERSION_base(4,16,0)
+  forall x. f @ x, 
+#endif
+  Functor f) => LensLike f s t a b
+
+type Traversal s t a b = forall f. (
+#if MIN_VERSION_base(4,16,0)
+    forall x. f @ x, 
+#endif
+    Applicative f) => (a -> f b) -> s -> f t
 
 type Lens'      s a = Lens s s a a
 type Traversal' s a = Traversal s s a a
@@ -84,7 +100,11 @@ view :: Getting a s a -> s ->  a
 view l s = getConst (l Const s)
 {-# INLINE view #-}
 
-use :: MonadState s m => Getting a s a -> m a
+use :: (
+#if MIN_VERSION_base(4,16,0)
+        m @ s,
+#endif
+        MonadState s m) => Getting a s a -> m a
 use l = gets (view l)
 {-# INLINE use #-}
 
@@ -125,7 +145,7 @@ toSetOf l s = getConst (l (\x -> Const (Set.singleton x)) s)
 
 aview :: ALens s t a b -> s -> a
 aview l = pretextPos  . l pretextSell
-{-# INLINE aview #-}
+{-# NOINLINE aview #-}
 
 {-
 lens :: (s -> a) -> (s -> a -> s) -> Lens' s a
@@ -190,38 +210,46 @@ s ^# l = aview l s
 
 (#~) :: ALens s t a b -> b -> s -> t
 (#~) l b s = pretextPeek b (l pretextSell s)
-{-# INLINE (#~) #-}
+{-# NOINLINE (#~) #-}
 
 (#%~) :: ALens s t a b -> (a -> b) -> s -> t
 (#%~) l f s = pretextPeeks f (l pretextSell s)
-{-# INLINE (#%~) #-}
+{-# NOINLINE (#%~) #-}
 
 pretextSell :: a -> Pretext a b b
 pretextSell a = Pretext (\afb -> afb a)
-{-# INLINE pretextSell #-}
+{-# NOINLINE pretextSell #-}
 
 pretextPeeks :: (a -> b) -> Pretext a b t -> t
 pretextPeeks f (Pretext m) = runIdentity $ m (\x -> Identity (f x))
-{-# INLINE pretextPeeks #-}
+{-# NOINLINE pretextPeeks #-}
 
 pretextPeek :: b -> Pretext a b t -> t
 pretextPeek b (Pretext m) = runIdentity $ m (\_ -> Identity b)
-{-# INLINE pretextPeek #-}
+{-# NOINLINE pretextPeek #-}
 
 pretextPos :: Pretext a b t -> a
 pretextPos (Pretext m) = getConst (m Const)
-{-# INLINE pretextPos #-}
+{-# NOINLINE pretextPos #-}
 
-cloneLens :: Functor f => ALens s t a b -> LensLike f s t a b
+cloneLens :: (
+#if MIN_VERSION_base(4,16,0)
+        Total f,
+#endif
+        Functor f) => ALens s t a b -> LensLike f s t a b
 cloneLens l f s = runPretext (l pretextSell s) f
-{-# INLINE cloneLens #-}
+{-# NOINLINE cloneLens #-}
 
 -------------------------------------------------------------------------------
 -- Comonads
 -------------------------------------------------------------------------------
 
 -- | @lens@ variant is also parametrised by profunctor.
-data Pretext a b t = Pretext { runPretext :: forall f. Functor f => (a -> f b) -> f t }
+data Pretext a b t = Pretext { runPretext :: forall f. (
+#if MIN_VERSION_base(4,16,0)
+                                 forall x. f @ x,
+#endif
+                                 Functor f) => (a -> f b) -> f t }
 
 instance Functor (Pretext a b) where
     fmap f (Pretext pretext) = Pretext (\afb -> fmap f (pretext afb))

@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints #-}
+#endif
 module Distribution.Types.SourceRepo.Lens (
     T.SourceRepo,
     module Distribution.Types.SourceRepo.Lens,

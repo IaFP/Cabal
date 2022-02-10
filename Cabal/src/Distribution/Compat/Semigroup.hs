@@ -4,6 +4,9 @@
 {-# LANGUAGE FlexibleContexts            #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving  #-}
 {-# LANGUAGE TypeOperators               #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, TypeOperators, ExplicitNamespaces #-}
+#endif
 
 -- | Compatibility layer for "Data.Semigroup"
 module Distribution.Compat.Semigroup
@@ -24,6 +27,9 @@ module Distribution.Compat.Semigroup
 import Distribution.Compat.Binary (Binary)
 import Distribution.Utils.Structured (Structured)
 import Data.Typeable (Typeable)
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type (@), Total)
+#endif
 
 import GHC.Generics
 -- Data.Semigroup is available since GHC 8.0/base-4.9 in `base`
@@ -79,7 +85,11 @@ instance Semigroup a => Monoid (Option' a) where
 -- @
 -- 'gmappend' a ('gmappend' b c) = 'gmappend' ('gmappend' a b) c
 -- @
-gmappend :: (Generic a, GSemigroup (Rep a)) => a -> a -> a
+gmappend :: (
+#if MIN_VERSION_base(4,16,0)
+             forall x. (Rep a) @ x, -- need to do this as Total (Rep a) doesn't work
+#endif  
+             Generic a, GSemigroup (Rep a)) => a -> a -> a
 gmappend x y = to (gmappend' (from x) (from y))
 
 class GSemigroup f where
@@ -88,10 +98,18 @@ class GSemigroup f where
 instance Semigroup a => GSemigroup (K1 i a) where
     gmappend' (K1 x) (K1 y) = K1 (x <> y)
 
-instance GSemigroup f => GSemigroup (M1 i c f) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+        Total f,
+#endif  
+        GSemigroup f) => GSemigroup (M1 i c f) where
     gmappend' (M1 x) (M1 y) = M1 (gmappend' x y)
 
-instance (GSemigroup f, GSemigroup g) => GSemigroup (f :*: g) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+        Total f, Total g,
+#endif
+        GSemigroup f, GSemigroup g) => GSemigroup (f :*: g) where
     gmappend' (x1 :*: x2) (y1 :*: y2) = gmappend' x1 y1 :*: gmappend' x2 y2
 
 -- | Generically generate a 'Monoid' 'mempty' for any product-like type
@@ -103,17 +121,33 @@ instance (GSemigroup f, GSemigroup g) => GSemigroup (f :*: g) where
 -- 'gmappend' 'gmempty' a = a = 'gmappend' a 'gmempty'
 -- @
 
-gmempty :: (Generic a, GMonoid (Rep a)) => a
+gmempty :: (
+#if MIN_VERSION_base(4,16,0)
+            forall x. (Rep a) @ x,
+#endif 
+            Generic a, GMonoid (Rep a)) => a
 gmempty = to gmempty'
 
-class GSemigroup f => GMonoid f where
+class (
+#if MIN_VERSION_base(4,16,0)
+        Total f,
+#endif
+    GSemigroup f) => GMonoid f where
     gmempty' :: f p
 
 instance (Semigroup a, Monoid a) => GMonoid (K1 i a) where
     gmempty' = K1 mempty
 
-instance GMonoid f => GMonoid (M1 i c f) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+        Total f,
+#endif
+        GMonoid f) => GMonoid (M1 i c f) where
     gmempty' = M1 gmempty'
 
-instance (GMonoid f, GMonoid g) => GMonoid (f :*: g) where
+instance (
+#if MIN_VERSION_base(4,16,0)
+        Total f, Total g,
+#endif
+       GMonoid f, GMonoid g) => GMonoid (f :*: g) where
     gmempty' = gmempty' :*: gmempty'
