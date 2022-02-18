@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 {-# LANGUAGE OverloadedStrings #-}
 module Distribution.Fields.ConfVar (parseConditionConfVar) where
 
@@ -43,13 +47,25 @@ sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
 parser :: Parser (Condition ConfVar)
 parser = condOr
   where
+-- #if MIN_VERSION_base(4,16,0)
+--     condOr :: forall c.  Parser (Condition c)
+--     condAnd :: forall c. Parser (Condition c)
+-- #endif
+
     condOr       = sepByNonEmpty condAnd (oper "||") >>= return . foldl1 COr
     condAnd      = sepByNonEmpty cond    (oper "&&") >>= return . foldl1 CAnd
+-- #if MIN_VERSION_base(4,16,0)
+--     cond :: forall a . Parser (Condition a)
+-- #endif
     cond         = P.choice
          [ boolLiteral, parens condOr,  notCond, osCond, archCond, flagCond, implCond ]
-
+-- #if MIN_VERSION_base(4,16,0)
+--     notCond :: forall a . Parser (Condition a)
+-- #endif
     notCond      = CNot <$ oper "!" <*> cond
-
+-- #if MIN_VERSION_base(4,16,0)
+--     boolLiteral :: forall a . Parser (Condition a)
+-- #endif
     boolLiteral  = Lit <$> boolLiteral'
     osCond       = Var . OS   <$ string "os"   <*> parens fromParsec
     flagCond     = Var . PackageFlag <$ string "flag" <*> parens fromParsec
