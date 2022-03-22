@@ -5,6 +5,9 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
+#if __GLASGOW_HASKELL__ >= 903
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators #-}
+#endif
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Distribution.Compat.Graph
@@ -98,10 +101,17 @@ import qualified Data.Map.Strict             as Map
 import qualified Data.Set                    as Set
 import qualified Data.Tree                   as Tree
 import qualified Distribution.Compat.Prelude as Prelude
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (WFT)
+#endif
 
 -- | A graph of nodes @a@.  The nodes are expected to have instance
 -- of class 'IsNode'.
-data Graph a
+data
+#if MIN_VERSION_base(4,16,0)
+  WFT (Key a) => 
+#endif
+  Graph a
     = Graph {
         graphMap          :: !(Map (Key a) a),
         -- Lazily cached graph representation
@@ -172,7 +182,11 @@ instance (NFData a, NFData (Key a)) => NFData (Graph a) where
 -- graph nodes.  A node of type @a@ is associated with some unique key of
 -- type @'Key' a@; given a node we can determine its key ('nodeKey')
 -- and the keys of its neighbors ('nodeNeighbors').
-class Ord (Key a) => IsNode a where
+class (
+#if MIN_VERSION_base(4,16,0)
+  WFT (Key a),
+#endif
+  Ord (Key a)) => IsNode a where
     type Key a
     nodeKey :: a -> Key a
     nodeNeighbors :: a -> [Key a]
