@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP         #-}
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -433,6 +434,9 @@ mealy f = go where
     go _ [] = []
     go s (x : xs) = let ~(s', y) = f s x in y : go s' xs
 
+#if MIN_VERSION_base(4,16,0)
+{-# NOINLINE fieldLinesToStream #-} -- ANI TODO: specialize is kind of broken.
+#endif
 fieldLinesToStream :: [FieldLine ann] -> FieldLineStream
 fieldLinesToStream []                    = fieldLineStreamEnd
 fieldLinesToStream [FieldLine _ bs]      = FLSLast bs
