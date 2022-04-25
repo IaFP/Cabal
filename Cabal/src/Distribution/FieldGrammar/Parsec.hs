@@ -433,7 +433,9 @@ mealy :: (s -> a -> (s, b)) -> s -> [a] -> [b]
 mealy f = go where
     go _ [] = []
     go s (x : xs) = let ~(s', y) = f s x in y : go s' xs
-
+#if MIN_VERSION_base(4,16,0)
+{-# NOINLINE fieldLinesToStream #-} -- specializer bug
+#endif
 fieldLinesToStream :: [FieldLine ann] -> FieldLineStream
 fieldLinesToStream []                    = fieldLineStreamEnd
 fieldLinesToStream [FieldLine _ bs]      = FLSLast bs
