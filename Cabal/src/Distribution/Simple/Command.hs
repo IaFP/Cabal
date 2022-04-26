@@ -76,8 +76,7 @@ import qualified Data.List as List
 import qualified Distribution.GetOpt as GetOpt
 import Distribution.ReadE
 import Distribution.Simple.Utils
-import Distribution.Compat.Lens (ALens', ALens,-- (^#), (#~)
-                                pretextPos, pretextSell, pretextPeek) 
+import Distribution.Compat.Lens (ALens', (^#), (#~)) 
 
 
 data CommandUI flags = CommandUI {
@@ -248,20 +247,6 @@ getCurrentChoice (ChoiceOpt alts) a =
     [ lf | (_,(_sf,lf:_), _, currentChoice) <- alts, currentChoice a]
 
 getCurrentChoice _ _ = error "Command.getChoice: expected a Choice OptDescr"
-
-infixl 8 ^#
-infixr 4 #~
-
-aview :: ALens s t a b -> s -> a
-aview l = pretextPos  . l pretextSell
-
-(^#) :: s -> ALens s t a b -> a
-s ^# l = aview l s
-
-(#~) :: ALens s t a b -> b -> s -> t
-(#~) l b s = pretextPeek b (l pretextSell s)
-{-# NOINLINE (#~) #-}
-
 
 liftOption :: (b -> a) -> (a -> (b -> b)) -> OptionField a -> OptionField b
 liftOption get' set' opt =

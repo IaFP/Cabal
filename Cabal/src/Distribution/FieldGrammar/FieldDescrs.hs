@@ -18,7 +18,7 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Data.List                   (dropWhileEnd)
-import Distribution.Compat.Lens    (pretextPos, runPretext, pretextSell, ALens, LensLike)
+import Distribution.Compat.Lens    (aview, runPretext, pretextSell, ALens, LensLike)
 import Distribution.Compat.Newtype
 import Distribution.FieldGrammar
 import Distribution.Pretty         (Pretty (..), showFreeText)
@@ -39,10 +39,6 @@ cloneLens :: (
         Functor f) => ALens s t a b -> LensLike f s t a b
 cloneLens l f s = runPretext (l pretextSell s) f
 {-# NOINLINE cloneLens #-}
-
-aview :: ALens s t a b -> s -> a
-aview l = pretextPos  . l pretextSell
-{-# NOINLINE aview #-}
 
 -- strict pair
 data SP s = SP
