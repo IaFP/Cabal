@@ -80,7 +80,7 @@ import qualified Distribution.Types.BuildInfo.Lens                 as L
 import qualified Distribution.Types.GenericPackageDescription.Lens as L
 import qualified Distribution.Types.PackageDescription.Lens        as L
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (Total, type (@))
+import GHC.Types (Total)
 #endif
 
 -- $setup

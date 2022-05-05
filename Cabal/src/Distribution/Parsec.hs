@@ -81,11 +81,7 @@ import GHC.Types (type (@), Total)
 -- For parsing @.cabal@ like file structure, see "Distribution.Fields".
 --
 class Parsec a where
-    parsec :: (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-        CabalParsing m) => m a
+    parsec :: CabalParsing m => m a
 
 -- | Parsing class which
 --
@@ -101,25 +97,12 @@ class (
     parsecWarning :: PWarnType -> String -> m ()
 
     parsecHaskellString :: m String
-#if MIN_VERSION_base(4,16,0)
-    default parsecHaskellString :: (m @ [Maybe Char], m @ Char
-                                   , m @ (Char -> [Maybe Char]), m @ ([Maybe Char] -> [Maybe Char])
-                                   , m @ Maybe Char, m @ (Maybe Char -> Maybe Char)
-                                   , m @ (), m @ (Char -> Char),  m @ ([Char] -> [Char])
-                                   , m @ (() -> [Char]), m @ (Int -> Int), m @ Int
-                                   ) => m String
-#endif
-
     parsecHaskellString = stringLiteral
 
     askCabalSpecVersion :: m CabalSpecVersion
 
 -- | 'parsec' /could/ consume trailing spaces, this function /will/ consume.
-lexemeParsec :: (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-        CabalParsing m, Parsec a) => m a
+lexemeParsec :: (CabalParsing m, Parsec a) => m a
 lexemeParsec = parsec <* P.spaces
 
 newtype ParsecParser a = PP { unPP
@@ -186,7 +169,7 @@ instance P.Parsing ParsecParser where
     unexpected      = liftParsec . P.unexpected
     eof             = liftParsec P.eof
     notFollowedBy p = PP $ \v -> P.notFollowedBy (unPP p v)
-
+    
 instance P.CharParsing ParsecParser where
     satisfy   = liftParsec . P.satisfy
     char      = liftParsec . P.char
@@ -285,26 +268,14 @@ instance Parsec Bool where
                 "Boolean values are case sensitive, use 'True' or 'False'."
 
 -- | @[^ ,]@
-parsecToken :: (
-#if MIN_VERSION_base(4,16,0)
-                m @ ([Char] -> [Char]), m @ Char, m @ (),
-#endif
-  CabalParsing m) => m String
+parsecToken :: CabalParsing m => m String
 parsecToken = parsecHaskellString <|> ((P.munch1 (\x -> not (isSpace x) && x /= ',')  P.<?> "identifier" ) >>= checkNotDoubleDash)
 
 -- | @[^ ]@
-parsecToken' :: (
-#if MIN_VERSION_base(4,16,0)
-                 m @ ([Char] -> [Char]), m @ Char, m @ (),
-#endif
-                 CabalParsing m) => m String
+parsecToken' :: CabalParsing m => m String
 parsecToken' = parsecHaskellString <|> ((P.munch1 (not . isSpace) P.<?> "token") >>= checkNotDoubleDash)
 
-checkNotDoubleDash ::  (
-#if MIN_VERSION_base(4,16,0)
-                m @ (),
-#endif
-                CabalParsing m) => String -> m String
+checkNotDoubleDash :: CabalParsing m => String -> m String
 checkNotDoubleDash s = do
     when (s == "--") $ parsecWarning PWTDoubleDash $ unwords
         [ "Double-dash token found."
@@ -314,11 +285,7 @@ checkNotDoubleDash s = do
 
     return s
 
-parsecFilePath :: (
-#if MIN_VERSION_base(4,16,0)
-                m @ ([Char] -> [Char]), m @ Char, m @ (),
-#endif
-                CabalParsing m) => m FilePath
+parsecFilePath :: CabalParsing m => m FilePath
 parsecFilePath = parsecToken
 
 -- | Parse a benchmark/test-suite types.
@@ -335,14 +302,7 @@ parsecStandard f = do
       -- each component must contain an alphabetic character, to avoid
       -- ambiguity in identifiers like foo-1 (the 1 is the version number).
 
-parsecCommaList :: (
-#if MIN_VERSION_base(4,16,0)
-                   m @ (), m @ (a -> a), m @ ([a] -> [a])
-                   , m @ ([a] -> NonEmpty a), m @ NonEmpty a
-                   , m @ (() -> a),  m @ Char
-                   , m @ (() -> ()),
-#endif
-  CabalParsing m) => m a -> m [a]
+parsecCommaList :: CabalParsing m => m a -> m [a]
 parsecCommaList p = P.sepBy (p <* P.spaces) (P.char ',' *> P.spaces P.<?> "comma")
 
 parsecCommaNonEmpty :: CabalParsing m => m a -> m (NonEmpty a)
@@ -355,12 +315,7 @@ parsecCommaNonEmpty p = P.sepByNonEmpty (p <* P.spaces) (P.char ',' *> P.spaces 
 -- (comma p)*    -- leading comma
 -- (p comma)*    -- trailing comma
 -- @
-parsecLeadingCommaList :: (
-#if MIN_VERSION_base(4,16,0)
-                          m @ Maybe (), m @ NonEmpty a, m @ (a -> a), m @ ([a] -> [a]),
-                          m @ ([a] -> NonEmpty a), m @ (), m @ (() -> a), m @ Char, m @ (() -> ()),
-#endif
-  CabalParsing m) => m a -> m [a]
+parsecLeadingCommaList :: CabalParsing m => m a -> m [a]
 parsecLeadingCommaList p = do
     c <- P.optional comma
     case c of
@@ -373,12 +328,7 @@ parsecLeadingCommaList p = do
 -- |
 --
 -- @since 3.4.0.0
-parsecLeadingCommaNonEmpty :: (
-#if MIN_VERSION_base(4,16,0)
-                          m @ Maybe (), m @ NonEmpty a, m @ (a -> a), m @ ([a] -> [a]),
-                          m @ ([a] -> NonEmpty a), m @ (), m @ (() -> a), m @ Char, m @ (() -> ()),
-#endif
-  CabalParsing m) => m a -> m (NonEmpty a)
+parsecLeadingCommaNonEmpty :: CabalParsing m => m a -> m (NonEmpty a)
 parsecLeadingCommaNonEmpty p = do
     c <- P.optional comma
     case c of
@@ -388,12 +338,7 @@ parsecLeadingCommaNonEmpty p = do
     lp = p <* P.spaces
     comma = P.char ',' *> P.spaces P.<?> "comma"
 
-parsecOptCommaList :: (
-#if MIN_VERSION_base(4,16,0)
-                          m @ Maybe (), m @ NonEmpty a, m @ (a -> a), m @ ([a] -> [a]),
-                          m @ ([a] -> NonEmpty a), m @ (), m @ (() -> a), m @ Char, m @ (() -> ()),
-#endif
-  CabalParsing m) => m a -> m [a]
+parsecOptCommaList :: CabalParsing m => m a -> m [a]
 parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
   where
     comma = P.char ',' *> P.spaces
@@ -412,12 +357,7 @@ parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
 --
 -- @since 3.0.0.0
 --
-parsecLeadingOptCommaList :: (
-#if MIN_VERSION_base(4,16,0)
-                          m @ Maybe (), m @ NonEmpty a, m @ (a -> a), m @ ([a] -> [a]),
-                          m @ ([a] -> NonEmpty a), m @ (), m @ (() -> a), m @ Char, m @ (() -> ()),
-#endif
-  CabalParsing m) => m a -> m [a]
+parsecLeadingOptCommaList :: CabalParsing m => m a -> m [a]
 parsecLeadingOptCommaList p = do
     c <- P.optional comma
     case c of
@@ -435,22 +375,14 @@ parsecLeadingOptCommaList p = do
             Just _  -> (x :) <$> P.sepEndBy lp comma
 
 -- | Content isn't unquoted
-parsecQuoted :: (
-#if MIN_VERSION_base(4,16,0)
-                m @ Char, m @ (Char -> a), m @ (a -> a),
-#endif
-                CabalParsing m) => m a -> m a
+parsecQuoted :: CabalParsing m => m a -> m a
 parsecQuoted = P.between (P.char '"') (P.char '"')
 
 -- | @parsecMaybeQuoted p = 'parsecQuoted' p <|> p@.
-parsecMaybeQuoted :: (
-#if MIN_VERSION_base(4,16,0)
-                     m @ (a -> a), m @ (Char -> a), m @ Char,
-#endif
-                     CabalParsing m) => m a -> m a
+parsecMaybeQuoted :: CabalParsing m => m a -> m a
 parsecMaybeQuoted p = parsecQuoted p <|> p
 
-parsecUnqualComponentName :: forall m. (CabalParsing m) => m String
+parsecUnqualComponentName :: forall m. CabalParsing m => m String
 parsecUnqualComponentName = state0 DList.empty where
     --
     -- using @kleene@ package we can easily see that
@@ -512,10 +444,7 @@ parsecUnqualComponentName = state0 DList.empty where
 
 stringLiteral :: forall m. (
 #if MIN_VERSION_base(4,16,0)
-                           m @ String, m @ [Maybe Char], m @ Char, m @ (Char -> [Maybe Char])
-                           , m @ ([Maybe Char] -> [Maybe Char]), m @ Maybe Char, m @ (Maybe Char -> Maybe Char)
-                           , m @ (), m @ (Char -> Char), m @ ([Char] -> [Char]), m @ (() -> [Char])
-                           , m @ (Int -> Int), m @ Int,
+  Total m, 
 #endif
   P.CharParsing m) => m String
 stringLiteral = lit where
@@ -545,11 +474,9 @@ stringLiteral = lit where
 
 escapeCode :: forall m. (
 #if MIN_VERSION_base(4,16,0)
-                       m @ Char,  m @ ([Char] -> [Char]), m @ (() -> [Char])
-                       , m @ (), m @ [Char], m @ (Int -> Int), m @ Int
-                       , m @ (Char -> Char),
+  Total m, 
 #endif
-                       P.CharParsing m) => m Char
+  P.CharParsing m) => m Char
 escapeCode = (charEsc <|> charNum <|> charAscii <|> charControl) P.<?> "escape code"
   where
   charControl, charNum :: m Char
