@@ -102,14 +102,14 @@ import qualified Data.Set                    as Set
 import qualified Data.Tree                   as Tree
 import qualified Distribution.Compat.Prelude as Prelude
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (WFT)
+import GHC.Types (WDT)
 #endif
 
 -- | A graph of nodes @a@.  The nodes are expected to have instance
 -- of class 'IsNode'.
 data
 #if MIN_VERSION_base(4,16,0)
-  WFT (Key a) => 
+  WDT (Key a) => 
 #endif
   Graph a
     = Graph {
@@ -184,7 +184,7 @@ instance (NFData a, NFData (Key a)) => NFData (Graph a) where
 -- and the keys of its neighbors ('nodeNeighbors').
 class (
 #if MIN_VERSION_base(4,16,0)
-  WFT (Key a),
+  WDT (Key a),
 #endif
   Ord (Key a)) => IsNode a where
     type Key a
