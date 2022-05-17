@@ -36,9 +36,6 @@ import qualified Distribution.Fields.Parser as P
 
 import qualified Data.ByteString  as BS
 import qualified Text.PrettyPrint as PP
-#if MIN_VERSION_base(4,16,0)
-import GHC.Types (Total)
-#endif
 
 data PrettyField ann
     = PrettyField ann FieldName PP.Doc
@@ -153,11 +150,7 @@ renderField _ _ PrettyEmpty = Block NoMargin NoMargin mempty
 -------------------------------------------------------------------------------
 
 genericFromParsecFields
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total f,
-#endif
-      Applicative f)
+    :: (Applicative f)
     => (FieldName -> [P.FieldLine ann] -> f PP.Doc)     -- ^ transform field contents
     -> (FieldName -> [P.SectionArg ann] -> f [PP.Doc])  -- ^ transform section arguments
     -> [P.Field ann]

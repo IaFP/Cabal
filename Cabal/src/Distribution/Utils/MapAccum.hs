@@ -8,7 +8,7 @@ module Distribution.Utils.MapAccum (mapAccumM) where
 import Distribution.Compat.Prelude
 import Prelude ()
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (Total, type(@))
+import GHC.Types (type(@))
 #endif  
 -- Like StateT but with return tuple swapped
 newtype
@@ -26,7 +26,7 @@ instance
 #else
     (
 #if __GLASGOW_HASKELL__ >= 903
-     Total m, 
+     Applicative m, 
 #endif
      Monad m)
 #endif
@@ -43,7 +43,7 @@ mapAccumM ::
 #else
     (
 #if __GLASGOW_HASKELL__ >= 903
-     Total m, Total t,
+     Applicative m, t @ StateM a m c,
 #endif
      Monad m, Traversable t)
 #endif

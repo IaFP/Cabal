@@ -214,7 +214,7 @@ import Distribution.Utils.Structured   (Structured)
 
 import qualified Debug.Trace
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (type (@), Total)
+import GHC.Types (type (@))
 #endif
 -- | New name for 'Text.PrettyPrint.<>'
 (<<>>) :: Disp.Doc -> Disp.Doc -> Disp.Doc
@@ -267,27 +267,15 @@ instance NFData a => GNFData (K1 i a) where
   grnf = rnf . unK1
   {-# INLINEABLE grnf #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total a,
-#endif
-    GNFData a) => GNFData (M1 i c a) where
+instance (GNFData a) => GNFData (M1 i c a) where
   grnf = grnf . unM1
   {-# INLINEABLE grnf #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total a, Total b,
-#endif  
-  GNFData a, GNFData b) => GNFData (a :*: b) where
+instance (GNFData a, GNFData b) => GNFData (a :*: b) where
   grnf (x :*: y) = grnf x `seq` grnf y
   {-# INLINEABLE grnf #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total a, Total b,
-#endif 
-  GNFData a, GNFData b) => GNFData (a :+: b) where
+instance (GNFData a, GNFData b) => GNFData (a :+: b) where
   grnf (L1 x) = grnf x
   grnf (R1 x) = grnf x
   {-# INLINEABLE grnf #-}

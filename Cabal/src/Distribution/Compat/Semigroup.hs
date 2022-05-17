@@ -28,7 +28,7 @@ import Distribution.Compat.Binary (Binary)
 import Distribution.Utils.Structured (Structured)
 import Data.Typeable (Typeable)
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (type (@), Total)
+import GHC.Types (Total, type (@))
 #endif
 
 import GHC.Generics
@@ -128,11 +128,7 @@ gmempty :: (
             Generic a, GMonoid (Rep a)) => a
 gmempty = to gmempty'
 
-class (
-#if MIN_VERSION_base(4,16,0)
-        Total f,
-#endif
-    GSemigroup f) => GMonoid f where
+class GSemigroup f => GMonoid f where
     gmempty' :: f p
 
 instance (Semigroup a, Monoid a) => GMonoid (K1 i a) where

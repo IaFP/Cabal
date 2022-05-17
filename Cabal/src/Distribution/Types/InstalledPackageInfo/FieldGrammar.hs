@@ -41,9 +41,6 @@ import Distribution.Types.InstalledPackageInfo
 
 import qualified Distribution.Types.InstalledPackageInfo.Lens as L
 import qualified Distribution.Types.PackageId.Lens            as L
-#if MIN_VERSION_base(4,16,0)
-import GHC.Types (Total)
-#endif
 
 -- Note: GHC goes nuts and inlines everything,
 -- One can see e.g. in -ddump-simpl-stats:
@@ -60,11 +57,7 @@ f <@> x = f <*> x
 {-# NOINLINE (<@>) #-}
 
 ipiFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-        Total (g InstalledPackageInfo), Total g, Total (g Basic),
-#endif
-         FieldGrammar c g, Applicative (g InstalledPackageInfo), Applicative (g Basic)
+    :: (FieldGrammar c g, Applicative (g InstalledPackageInfo), Applicative (g Basic)
        , c (Identity AbiHash)
        , c (Identity LibraryVisibility)
        , c (Identity PackageName)
@@ -297,11 +290,7 @@ basicLibVisibility f b = (\x -> b { _basicLibVisibility = x }) <$>
 {-# INLINE basicLibVisibility #-}
 
 basicFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-        Total (g Basic), Total g,
-#endif
-         FieldGrammar c g, Applicative (g Basic)
+    :: (FieldGrammar c g, Applicative (g Basic)
        , c (Identity LibraryVisibility)
        , c (Identity PackageName)
        , c (Identity UnqualComponentName)

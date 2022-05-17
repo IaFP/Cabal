@@ -134,7 +134,7 @@ import Data.Typeable (Typeable1, typeOf1)
 #endif
 
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (Total, type(@))
+import GHC.Types (type(@))
 #endif
 
 -------------------------------------------------------------------------------
@@ -207,13 +207,6 @@ structureBuilder s0 = State.evalState (go s0) Map.empty where
     go (Structure t v n s) = withTypeRep t $ do
         s' <- goSop s
         return $ mconcat [Builder.word8 3, Builder.word32LE v, Builder.stringUtf8 n, s']
-#if MIN_VERSION_base(4,16,0)
-    withTypeRep :: (Total m, Monad m) =>
-                   TypeRep  -> State.StateT
-                                       (Map.Map String (NonEmpty TypeRep)) m Builder.Builder
-                                  -> State.StateT
-                                       (Map.Map String (NonEmpty TypeRep)) m Builder.Builder
-#endif                                       
     withTypeRep t k = do
         acc <- State.get
         case insert t acc of

@@ -69,7 +69,7 @@ import qualified Distribution.Compat.DList       as DList
 import qualified Distribution.Compat.MonadFail   as Fail
 import qualified Text.Parsec                     as Parsec
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (type (@), Total)
+import GHC.Types (type (@))
 #endif
 
 -------------------------------------------------------------------------------
@@ -89,11 +89,7 @@ class Parsec a where
 --
 -- * knows @cabal-version@ we work with
 --
-class (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-        P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
+class (P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
     parsecWarning :: PWarnType -> String -> m ()
 
     parsecHaskellString :: m String
@@ -442,11 +438,7 @@ parsecUnqualComponentName = state0 DList.empty where
     alt :: m String -> m String -> m String
     !alt = (<|>)
 
-stringLiteral :: forall m. (
-#if MIN_VERSION_base(4,16,0)
-  Total m, 
-#endif
-  P.CharParsing m) => m String
+stringLiteral :: forall m. (P.CharParsing m) => m String
 stringLiteral = lit where
     lit :: m String
     lit = foldr (maybe id (:)) ""
@@ -472,11 +464,7 @@ stringLiteral = lit where
     escapeEmpty = P.char '&'
     escapeGap = P.skipSpaces1 *> (P.char '\\' P.<?> "end of string gap")
 
-escapeCode :: forall m. (
-#if MIN_VERSION_base(4,16,0)
-  Total m, 
-#endif
-  P.CharParsing m) => m Char
+escapeCode :: forall m. (P.CharParsing m) => m Char
 escapeCode = (charEsc <|> charNum <|> charAscii <|> charControl) P.<?> "escape code"
   where
   charControl, charNum :: m Char

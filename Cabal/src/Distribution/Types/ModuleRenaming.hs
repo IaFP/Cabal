@@ -26,7 +26,7 @@ import qualified Data.Set                   as Set
 import qualified Distribution.Compat.CharParsing as P
 import           Text.PrettyPrint           (hsep, parens, punctuate, text, comma)
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (type (@), Total)
+import GHC.Types (type (@))
 #endif
 
 -- | Renaming applied to the modules provided by a package.
@@ -94,16 +94,12 @@ instance Pretty ModuleRenaming where
 
 parensStrict :: (
 #if MIN_VERSION_base(4,16,0)
-        forall x. m @ x,
+  forall x. m @ x, 
 #endif
-        Monad m, P.CharParsing m, MonadFail m, Alternative m) => m a -> m a
+  P.CharParsing m, MonadFail m, MonadPlus m) => m a -> m a
 parensStrict p = P.between (P.char '(' >> warnSpaces) (P.char ')') p
 
-warnSpaces :: (
-#if MIN_VERSION_base(4,16,0)
-  Total m,
-#endif
-   Monad m, P.CharParsing m, MonadFail m, Alternative m) => m (Maybe a)
+warnSpaces :: (Monad m, P.CharParsing m, MonadFail m, Alternative m) => m (Maybe a)
 warnSpaces = P.optional $
             P.space *> fail "space after parenthesis, use cabal-version: 3.0 or higher"
 
@@ -121,11 +117,7 @@ instance Parsec ModuleRenaming where
         parensLax    p = P.between (P.char '(' >> P.spaces)   (P.char ')' >> P.spaces)   p
 
 moduleRenamingParsec
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total m,
-#endif
-      CabalParsing m)
+    :: (CabalParsing m)
     => (forall a. m a -> m a)  -- ^ between parens
     -> m ModuleName            -- ^ module name parser
     -> m ModuleRenaming

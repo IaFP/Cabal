@@ -75,11 +75,7 @@ type Lens      s t a b = forall f. (
 #endif
   Functor f) => LensLike f s t a b
 
-type Traversal s t a b = forall f. (
-#if MIN_VERSION_base(4,16,0)
-    forall x. f @ x, 
-#endif
-    Applicative f) => (a -> f b) -> s -> f t
+type Traversal s t a b = forall f. Applicative f => (a -> f b) -> s -> f t
 
 type Lens'      s a = Lens s s a a
 type Traversal' s a = Traversal s s a a
@@ -100,11 +96,7 @@ view :: Getting a s a -> s ->  a
 view l s = getConst (l Const s)
 {-# INLINE view #-}
 
-use :: (
-#if MIN_VERSION_base(4,16,0)
-        m @ s,
-#endif
-        MonadState s m) => Getting a s a -> m a
+use :: (MonadState s m) => Getting a s a -> m a
 use l = gets (view l)
 {-# INLINE use #-}
 

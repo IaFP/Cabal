@@ -61,9 +61,7 @@ import Data.Foldable (asum)
 
 import qualified Data.List.NonEmpty as NE
 import qualified Text.Parsec as Parsec
-#if MIN_VERSION_base(4,16,0)
-import GHC.Types (type (@), Total)
-#endif
+
 -- | @choice ps@ tries to apply the parsers in the list @ps@ in order,
 -- until one of them succeeds. Returns the value of the succeeding
 -- parser.
@@ -99,32 +97,20 @@ between bra ket p = bra *> p <* ket
 -- by @sep@. Returns a list of values returned by @p@.
 --
 -- >  commaSep p  = p `sepBy` (symbol ",")
-sepBy :: (
-#if __GLASGOW_HASKELL__ >= 903
-          Total m, 
-#endif
-     Alternative m) => m a -> m sep -> m [a]
+sepBy :: (Alternative m) => m a -> m sep -> m [a]
 sepBy p sep = toList <$> sepByNonEmpty p sep <|> pure []
 {-# INLINE sepBy #-}
 
 -- | @sepByNonEmpty p sep@ parses /one/ or more occurrences of @p@, separated
 -- by @sep@. Returns a non-empty list of values returned by @p@.
-sepByNonEmpty :: (
-#if __GLASGOW_HASKELL__ >= 903
-                  Total m, 
-#endif
-                  Alternative m) => m a -> m sep -> m (NonEmpty a)
+sepByNonEmpty :: (Alternative m) => m a -> m sep -> m (NonEmpty a)
 sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
 {-# INLINE sepByNonEmpty #-}
 
 -- | @sepEndByNonEmpty p sep@ parses /one/ or more occurrences of @p@,
 -- separated and optionally ended by @sep@. Returns a non-empty list of values
 -- returned by @p@.
-sepEndByNonEmpty :: (
-#if __GLASGOW_HASKELL__ >= 903
-                     Total m, 
-#endif
-                     Alternative m) => m a -> m sep -> m (NonEmpty a)
+sepEndByNonEmpty :: (Alternative m) => m a -> m sep -> m (NonEmpty a)
 sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 
 -- | @sepEndBy p sep@ parses /zero/ or more occurrences of @p@,
@@ -132,21 +118,13 @@ sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 -- statements. Returns a list of values returned by @p@.
 --
 -- >  haskellStatements  = haskellStatement `sepEndBy` semi
-sepEndBy :: (
-#if __GLASGOW_HASKELL__ >= 903
-              Total m, 
-#endif
-             Alternative m) => m a -> m sep -> m [a]
+sepEndBy :: (Alternative m) => m a -> m sep -> m [a]
 sepEndBy p sep = toList <$> sepEndByNonEmpty p sep <|> pure []
 {-# INLINE sepEndBy #-}
 
 -- | @endByNonEmpty p sep@ parses /one/ or more occurrences of @p@, separated
 -- and ended by @sep@. Returns a non-empty list of values returned by @p@.
-endByNonEmpty :: (
-#if __GLASGOW_HASKELL__ >= 903
-                  Total m, 
-#endif
-                  Alternative m) => m a -> m sep -> m (NonEmpty a)
+endByNonEmpty :: (Alternative m) => m a -> m sep -> m (NonEmpty a)
 endByNonEmpty p sep = NE.some1 (p <* sep)
 {-# INLINE endByNonEmpty #-}
 
@@ -154,22 +132,14 @@ endByNonEmpty p sep = NE.some1 (p <* sep)
 -- and ended by @sep@. Returns a list of values returned by @p@.
 --
 -- >   cStatements  = cStatement `endBy` semi
-endBy :: (
-#if __GLASGOW_HASKELL__ >= 903
-          Total m, 
-#endif
-         Alternative m) => m a -> m sep -> m [a]
+endBy :: (Alternative m) => m a -> m sep -> m [a]
 endBy p sep = many (p <* sep)
 {-# INLINE endBy #-}
 
 -- | @count n p@ parses @n@ occurrences of @p@. If @n@ is smaller or
 -- equal to zero, the parser equals to @return []@. Returns a list of
 -- @n@ values returned by @p@.
-count :: (
-#if __GLASGOW_HASKELL__ >= 903
-          Total m, 
-#endif
-          Applicative m) => Int -> m a -> m [a]
+count :: (Applicative m) => Int -> m a -> m [a]
 count n p | n <= 0    = pure []
           | otherwise = sequenceA (replicate n p)
 {-# INLINE count #-}
@@ -179,11 +149,7 @@ count n p | n <= 0    = pure []
 -- application of all functions returned by @op@ to the values returned
 -- by @p@. If there are no occurrences of @p@, the value @x@ is
 -- returned.
-chainr :: (
-#if __GLASGOW_HASKELL__ >= 903
-           m @ (a -> a),
-#endif
-           Alternative m) => m a -> m (a -> a -> a) -> a -> m a
+chainr :: (Alternative m) => m a -> m (a -> a -> a) -> a -> m a
 chainr p op x = chainr1 p op <|> pure x
 {-# INLINE chainr #-}
 
@@ -192,11 +158,7 @@ chainr p op x = chainr1 p op <|> pure x
 -- application of all functions returned by @op@ to the values returned
 -- by @p@. If there are zero occurrences of @p@, the value @x@ is
 -- returned.
-chainl :: (
-#if MIN_VERSION_base(4,16,0)
-         m @ (a -> a), m @ ((a -> a) -> a -> a), m @ (a -> (a -> a) -> a -> a),
-#endif
-        Alternative m) => m a -> m (a -> a -> a) -> a -> m a
+chainl :: (Alternative m) => m a -> m (a -> a -> a) -> a -> m a
 chainl p op x = chainl1 p op <|> pure x
 {-# INLINE chainl #-}
 
@@ -215,11 +177,7 @@ chainl p op x = chainl1 p op <|> pure x
 -- >
 -- >  addop  = (+) <$ symbol "+"
 -- >       <|> (-) <$ symbol "-"
-chainl1 :: (
-#if __GLASGOW_HASKELL__ >= 903
-           m @ (a -> (a -> a) -> a -> a), m @ ((a -> a) -> a -> a), m @ (a -> a),
-#endif
-           Alternative m) => m a -> m (a -> a -> a) -> m a
+chainl1 :: (Alternative m) => m a -> m (a -> a -> a) -> m a
 chainl1 p op = scan where
   scan = p <**> rst
   rst = (\f y g x -> g (f x y)) <$> op <*> p <*> rst <|> pure id
@@ -229,11 +187,7 @@ chainl1 p op = scan where
 -- separated by @op@ Returns a value obtained by a /right/ associative
 -- application of all functions returned by @op@ to the values returned
 -- by @p@.
-chainr1 :: (
-#if MIN_VERSION_base(4,16,0)
-        m @ (a -> a), 
-#endif
-        Alternative m) => m a -> m (a -> a -> a) -> m a
+chainr1 :: (Alternative m) => m a -> m (a -> a -> a) -> m a
 chainr1 p op = scan where
   scan = p <**> rst
   rst = (flip <$> op <*> scan) <|> pure id
@@ -249,11 +203,7 @@ chainr1 p op = scan where
 --
 --    Note the overlapping parsers @anyChar@ and @string \"-->\"@, and
 --    therefore the use of the 'try' combinator.
-manyTill :: (
-#if MIN_VERSION_base(4,16,0)
-        m @ ([a] -> [a]),
-#endif
-  Alternative m) => m a -> m end -> m [a]
+manyTill :: (Alternative m) => m a -> m end -> m [a]
 manyTill p end = go where go = ([] <$ end) <|> ((:) <$> p <*> go)
 {-# INLINE manyTill #-}
 
@@ -271,18 +221,12 @@ class Alternative m => Parsing m where
   -- | A version of many that discards its input. Specialized because it
   -- can often be implemented more cheaply.
   skipMany :: m a -> m ()
-#if MIN_VERSION_base(4,16,0)
-  default skipMany :: (m @ [a], m @ ([a] -> [a])) => m a -> m ()
-#endif
   skipMany p = () <$ many p
   {-# INLINE skipMany #-}
 
   -- | @skipSome p@ applies the parser @p@ /one/ or more times, skipping
   -- its result. (aka skipMany1 in parsec)
   skipSome :: m a -> m ()
-#if MIN_VERSION_base(4,16,0)
-  default skipSome :: (m @ (() -> ())) => m a -> m ()
-#endif
   skipSome p = p *> skipMany p
   {-# INLINE skipSome #-}
 
@@ -306,11 +250,7 @@ class Alternative m => Parsing m where
   -- >  keywordLet  = try $ string "let" <* notFollowedBy alphaNum
   notFollowedBy :: Show a => m a -> m ()
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, MonadPlus m) => Parsing (Lazy.StateT s m) where
+instance (Parsing m, MonadPlus m) => Parsing (Lazy.StateT s m) where
   try (Lazy.StateT m) = Lazy.StateT $ try . m
   {-# INLINE try #-}
   Lazy.StateT m <?> l = Lazy.StateT $ \s -> m s <?> l
@@ -323,11 +263,7 @@ instance (
     $ \s -> notFollowedBy (fst <$> m s) >> return ((),s)
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, MonadPlus m) => Parsing (Strict.StateT s m) where
+instance (Parsing m, MonadPlus m) => Parsing (Strict.StateT s m) where
   try (Strict.StateT m) = Strict.StateT $ try . m
   {-# INLINE try #-}
   Strict.StateT m <?> l = Strict.StateT $ \s -> m s <?> l
@@ -340,11 +276,7 @@ instance (
     $ \s -> notFollowedBy (fst <$> m s) >> return ((),s)
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, MonadPlus m) => Parsing (ReaderT e m) where
+instance (Parsing m, MonadPlus m) => Parsing (ReaderT e m) where
   try (ReaderT m) = ReaderT $ try . m
   {-# INLINE try #-}
   ReaderT m <?> l = ReaderT $ \e -> m e <?> l
@@ -358,11 +290,7 @@ instance (
   notFollowedBy (ReaderT m) = ReaderT $ notFollowedBy . m
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, MonadPlus m, Monoid w) => Parsing (Strict.WriterT w m) where
+instance (Parsing m, MonadPlus m, Monoid w) => Parsing (Strict.WriterT w m) where
   try (Strict.WriterT m) = Strict.WriterT $ try m
   {-# INLINE try #-}
   Strict.WriterT m <?> l = Strict.WriterT (m <?> l)
@@ -375,11 +303,7 @@ instance (
     $ notFollowedBy (fst <$> m) >>= \x -> return (x, mempty)
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, MonadPlus m, Monoid w) => Parsing (Lazy.WriterT w m) where
+instance (Parsing m, MonadPlus m, Monoid w) => Parsing (Lazy.WriterT w m) where
   try (Lazy.WriterT m) = Lazy.WriterT $ try m
   {-# INLINE try #-}
   Lazy.WriterT m <?> l = Lazy.WriterT (m <?> l)
@@ -392,11 +316,7 @@ instance (
     $ notFollowedBy (fst <$> m) >>= \x -> return (x, mempty)
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, MonadPlus m, Monoid w) => Parsing (Lazy.RWST r w s m) where
+instance (Parsing m, MonadPlus m, Monoid w) => Parsing (Lazy.RWST r w s m) where
   try (Lazy.RWST m) = Lazy.RWST $ \r s -> try (m r s)
   {-# INLINE try #-}
   Lazy.RWST m <?> l = Lazy.RWST $ \r s -> m r s <?> l
@@ -409,11 +329,7 @@ instance (
     $ \r s -> notFollowedBy ((\(a,_,_) -> a) <$> m r s) >>= \x -> return (x, s, mempty)
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, MonadPlus m, Monoid w) => Parsing (Strict.RWST r w s m) where
+instance (Parsing m, MonadPlus m, Monoid w) => Parsing (Strict.RWST r w s m) where
   try (Strict.RWST m) = Strict.RWST $ \r s -> try (m r s)
   {-# INLINE try #-}
   Strict.RWST m <?> l = Strict.RWST $ \r s -> m r s <?> l
@@ -426,11 +342,7 @@ instance (
     $ \r s -> notFollowedBy ((\(a,_,_) -> a) <$> m r s) >>= \x -> return (x, s, mempty)
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsing m, Monad m) => Parsing (IdentityT m) where
+instance (Parsing m, Monad m) => Parsing (IdentityT m) where
   try = IdentityT . try . runIdentityT
   {-# INLINE try #-}
   IdentityT m <?> l = IdentityT (m <?> l)
@@ -444,11 +356,7 @@ instance (
   notFollowedBy (IdentityT m) = IdentityT $ notFollowedBy m
   {-# INLINE notFollowedBy #-}
 
-instance (
-#if MIN_VERSION_base(4,16,0)
-        Total m,
-#endif
-  Parsec.Stream s m t, Show t) => Parsing (Parsec.ParsecT s u m) where
+instance (Parsec.Stream s m t, Show t) => Parsing (Parsec.ParsecT s u m) where
   try           = Parsec.try
   (<?>)         = (Parsec.<?>)
   skipMany      = Parsec.skipMany

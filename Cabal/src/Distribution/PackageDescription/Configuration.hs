@@ -66,9 +66,7 @@ import           Distribution.Version
 
 import qualified Data.Map.Lazy as Map
 import           Data.Tree     (Tree (Node))
-#if MIN_VERSION_base(4,16,0)
-import GHC.Types (Total)
-#endif
+
 ------------------------------------------------------------------------------
 
 -- | Simplify a configuration condition using the OS and arch names.  Returns
@@ -109,11 +107,7 @@ simplifyWithSysParams os arch cinfo cond = (cond', flags)
 --
 
 -- | Parse a configuration condition from a string.
-parseCondition :: (
-#if MIN_VERSION_base(4,16,0)
-  Total m,
-#endif
-  CabalParsing m) => m (Condition ConfVar)
+parseCondition :: (CabalParsing m) => m (Condition ConfVar)
 parseCondition = condOr
   where
     condOr   = sepByNonEmpty condAnd (oper "||") >>= return . foldl1 COr
@@ -138,11 +132,7 @@ parseCondition = condOr
                        vr <- sp >> option anyVersion parsec
                        return $ Impl i vr
 
-inparens  :: (Applicative m, CabalParsing m
-#if MIN_VERSION_base(4,16,0)
-            , Total m
-#endif
-             ) => m a -> m a
+inparens  :: (Applicative m, CabalParsing m) => m a -> m a
 inparens  = between (P.char '(' >> sp) (sp >> P.char ')' >> sp)
   where
      sp  = spaces 

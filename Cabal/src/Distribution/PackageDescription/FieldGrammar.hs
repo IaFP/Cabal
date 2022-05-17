@@ -78,7 +78,7 @@ import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.SPDX               as SPDX
 import qualified Distribution.Types.Lens         as L
 #if MIN_VERSION_base(4,16,0)
-import GHC.Types (type (@), Total)
+import GHC.Types (type(@))
 #endif
 
 -------------------------------------------------------------------------------
@@ -86,11 +86,7 @@ import GHC.Types (type (@), Total)
 -------------------------------------------------------------------------------
 
 packageDescriptionFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g PackageDescription), Total (g PackageIdentifier), g @ PackageIdentifier,
-#endif
-      FieldGrammar c g, Applicative (g PackageDescription), Applicative (g PackageIdentifier)
+    :: (FieldGrammar c g, Applicative (g PackageDescription), Applicative (g PackageIdentifier)
        , c (Identity BuildType)
        , c (Identity PackageName)
        , c (Identity Version)
@@ -158,11 +154,7 @@ packageDescriptionFieldGrammar = PackageDescription
 -------------------------------------------------------------------------------
 
 libraryFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-      Total (g Library), Total (g BuildInfo), g @ BuildInfo,
-#endif
-      FieldGrammar c g, Applicative (g Library), Applicative (g BuildInfo)
+    :: (FieldGrammar c g, Applicative (g Library), Applicative (g BuildInfo)
        , c (Identity LibraryVisibility)
        , c (List CommaFSep (Identity ExeDependency) ExeDependency)
        , c (List CommaFSep (Identity LegacyExeDependency) LegacyExeDependency)
@@ -208,11 +200,7 @@ libraryFieldGrammar n = Library n
 -------------------------------------------------------------------------------
 
 foreignLibFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g ForeignLib), Total (g BuildInfo), g @ BuildInfo,
-#endif
-      FieldGrammar c g, Applicative (g ForeignLib), Applicative (g BuildInfo)
+    :: (FieldGrammar c g, Applicative (g ForeignLib), Applicative (g BuildInfo)
        , c (Identity ForeignLibType)
        , c (Identity LibVersionInfo)
        , c (Identity Version)
@@ -248,11 +236,7 @@ foreignLibFieldGrammar n = ForeignLib n
 -------------------------------------------------------------------------------
 
 executableFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g Executable), Total (g BuildInfo), g @ Executable, g @ BuildInfo,
-#endif
-      FieldGrammar c g, Applicative (g Executable), Applicative (g BuildInfo)
+    :: (FieldGrammar c g, Applicative (g Executable), Applicative (g BuildInfo)
        , c (Identity ExecutableScope)
        , c (List CommaFSep (Identity ExeDependency) ExeDependency)
        , c (List CommaFSep (Identity LegacyExeDependency) LegacyExeDependency)
@@ -313,11 +297,7 @@ testStanzaBuildInfo f s = fmap (\x -> s { _testStanzaBuildInfo = x }) (f (_testS
 {-# INLINE testStanzaBuildInfo #-}
 
 testSuiteFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g BenchmarkStanza), Total (g BuildInfo), g @ BenchmarkStanza, g @ BuildInfo, Total (g TestSuiteStanza),
-#endif       
-      FieldGrammar c g, Applicative (g TestSuiteStanza), Applicative (g BuildInfo)
+    :: (FieldGrammar c g, Applicative (g TestSuiteStanza), Applicative (g BuildInfo)
        , c (Identity ModuleName)
        , c (Identity TestType)
        , c (List CommaFSep (Identity ExeDependency) ExeDependency)
@@ -437,11 +417,7 @@ benchmarkStanzaBuildInfo f s = fmap (\x -> s { _benchmarkStanzaBuildInfo = x }) 
 {-# INLINE benchmarkStanzaBuildInfo #-}
 
 benchmarkFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g BenchmarkStanza), Total (g BuildInfo), g @ BenchmarkStanza, g @ BuildInfo,
-#endif       
-      FieldGrammar c g, Applicative (g BenchmarkStanza), Applicative (g BuildInfo)
+    :: (FieldGrammar c g, Applicative (g BenchmarkStanza), Applicative (g BuildInfo)
        , c (Identity BenchmarkType)
        , c (Identity ModuleName)
        , c (List CommaFSep (Identity ExeDependency) ExeDependency)
@@ -519,11 +495,7 @@ unvalidateBenchmark b = BenchmarkStanza
 -------------------------------------------------------------------------------
 
 buildInfoFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-    Total (g BuildInfo), g @ BuildInfo,
-#endif       
-      FieldGrammar c g, Applicative (g BuildInfo)
+    :: (FieldGrammar c g, Applicative (g BuildInfo)
        , c (List CommaFSep (Identity ExeDependency) ExeDependency)
        , c (List CommaFSep (Identity LegacyExeDependency) LegacyExeDependency)
        , c (List CommaFSep (Identity PkgconfigDependency) PkgconfigDependency)
@@ -623,11 +595,7 @@ buildInfoFieldGrammar = BuildInfo
 {-# SPECIALIZE buildInfoFieldGrammar :: PrettyFieldGrammar' BuildInfo #-}
 
 hsSourceDirsGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-         Total (g BuildInfo),
-#endif
-         FieldGrammar c g, Applicative (g BuildInfo)
+    :: (FieldGrammar c g, Applicative (g BuildInfo)
        , c (List FSep (Identity (SymbolicPath PackageDir SourceDir)) (SymbolicPath PackageDir SourceDir))
        )
     => g BuildInfo [SymbolicPath PackageDir SourceDir]
@@ -643,11 +611,7 @@ hsSourceDirsGrammar = (++)
     wrongLens f bi = (\fps -> set L.hsSourceDirs fps bi) <$> f []
 
 optionsFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g BuildInfo),
-#endif
-      FieldGrammar c g, Applicative (g BuildInfo), c (List NoCommaFSep Token' String))
+    :: (FieldGrammar c g, Applicative (g BuildInfo), c (List NoCommaFSep Token' String))
     => g BuildInfo (PerCompilerFlavor [String])
 optionsFieldGrammar = PerCompilerFlavor
     <$> monoidalFieldAla "ghc-options"   (alaList' NoCommaFSep Token') (extract GHC)
@@ -663,12 +627,7 @@ optionsFieldGrammar = PerCompilerFlavor
     extract flavor = L.options . lookupLens flavor
 
 profOptionsFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       g BuildInfo @ ([String] -> PerCompilerFlavor [String])
-       , g BuildInfo @ [String],
-#endif
-      FieldGrammar c g, Applicative (g BuildInfo), c (List NoCommaFSep Token' String))
+    :: (FieldGrammar c g, Applicative (g BuildInfo), c (List NoCommaFSep Token' String))
     => g BuildInfo (PerCompilerFlavor [String])
 profOptionsFieldGrammar = PerCompilerFlavor
     <$> monoidalFieldAla "ghc-prof-options"   (alaList' NoCommaFSep Token') (extract GHC)
@@ -678,12 +637,7 @@ profOptionsFieldGrammar = PerCompilerFlavor
     extract flavor = L.profOptions . lookupLens flavor
 
 sharedOptionsFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       g BuildInfo @ ([String] -> PerCompilerFlavor [String])
-       , g BuildInfo @ [String],
-#endif
-      FieldGrammar c g, Applicative (g BuildInfo), c (List NoCommaFSep Token' String))
+    :: (FieldGrammar c g, Applicative (g BuildInfo), c (List NoCommaFSep Token' String))
     => g BuildInfo (PerCompilerFlavor [String])
 sharedOptionsFieldGrammar = PerCompilerFlavor
     <$> monoidalFieldAla "ghc-shared-options"   (alaList' NoCommaFSep Token') (extract GHC)
@@ -703,11 +657,7 @@ lookupLens k f p@(PerCompilerFlavor ghc ghcjs)
 -------------------------------------------------------------------------------
 
 flagFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g PackageFlag),
-#endif
-  FieldGrammar c g, Applicative (g PackageFlag))
+    :: (FieldGrammar c g, Applicative (g PackageFlag))
     =>  FlagName -> g PackageFlag PackageFlag
 flagFieldGrammar name = MkPackageFlag name
     <$> freeTextFieldDef    "description"          L.flagDescription
@@ -721,11 +671,7 @@ flagFieldGrammar name = MkPackageFlag name
 -------------------------------------------------------------------------------
 
 sourceRepoFieldGrammar
-    :: (
-#if MIN_VERSION_base(4,16,0)
-       Total (g SourceRepo),
-#endif
-  FieldGrammar c g, Applicative (g SourceRepo), c (Identity RepoType), c Token, c FilePathNT)
+    :: (FieldGrammar c g, Applicative (g SourceRepo), c (Identity RepoType), c Token, c FilePathNT)
     => RepoKind -> g SourceRepo SourceRepo
 sourceRepoFieldGrammar kind = SourceRepo kind
     <$> optionalField    "type"                L.repoType
@@ -744,9 +690,9 @@ sourceRepoFieldGrammar kind = SourceRepo kind
 setupBInfoFieldGrammar
     :: (
 #if MIN_VERSION_base(4,16,0)
-       g SetupBuildInfo @ [Dependency],
+        g SetupBuildInfo @ [Dependency],
 #endif
-      FieldGrammar c g, Functor (g SetupBuildInfo), c (List CommaVCat (Identity Dependency) Dependency))
+       FieldGrammar c g, Functor (g SetupBuildInfo), c (List CommaVCat (Identity Dependency) Dependency))
     => Bool -> g SetupBuildInfo SetupBuildInfo
 setupBInfoFieldGrammar def = flip SetupBuildInfo def
     <$> monoidalFieldAla "setup-depends" (alaList CommaVCat) L.setupDepends

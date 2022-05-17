@@ -1,7 +1,9 @@
+{-# LANGUAGE CPP     #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE ExplicitNamespaces   #-}
 {-# OPTIONS_GHC -Wall -Werror #-}
 module Distribution.Parsec.FieldLineStream (
     FieldLineStream (..),
@@ -18,6 +20,9 @@ import Prelude ()
 
 import qualified Data.ByteString as BS
 import qualified Text.Parsec     as Parsec
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type(@))
+#endif
 
 -- | This is essentially a lazy bytestring, but chunks are glued with newline @\'\\n\'@.
 data FieldLineStream
@@ -37,7 +42,11 @@ fieldLineStreamFromString = FLSLast . toUTF8BS
 fieldLineStreamFromBS :: ByteString -> FieldLineStream
 fieldLineStreamFromBS = FLSLast
 
-instance Monad m => Parsec.Stream FieldLineStream m Char where
+instance (
+#if MIN_VERSION_base(4,16,0)
+          m @ Maybe (Char, FieldLineStream),
+#endif
+          Monad m) => Parsec.Stream FieldLineStream m Char where
     uncons (FLSLast bs) = return $ case BS.uncons bs of
         Nothing       -> Nothing
         Just (c, bs') -> Just (unconsChar c bs' (\bs'' -> FLSLast bs'') fieldLineStreamEnd)
