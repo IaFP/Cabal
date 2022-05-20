@@ -863,6 +863,9 @@ data KnownExtension =
 
   -- | Enable data types for which an unlifted or levity-polymorphic result kind is inferred.
   | UnliftedDatatypes
+  
+  -- | IaFP language extension PartialTypeConstructors
+  | PartialTypeConstructors
 
   deriving (Generic, Show, Read, Eq, Ord, Enum, Bounded, Typeable, Data)
 
